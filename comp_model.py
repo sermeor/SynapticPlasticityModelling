@@ -40,11 +40,11 @@ def comp_model(z, t):
   
 
   ## Histamine neuron constants. 
-  b1 = 15  #HA leakage from the cytosol to the extracellular space.
+  b1 = 10  #HA leakage from the cytosol to the extracellular space.
   b2 = 0.75*3.5  #HA release per action potential.
   b3 = 0.05  #HA removal from the extracellular space
   b4 = .25  #Strength of stabilization of bHT to bHT0.
-  b5 = 2.5 #From cHT to HTpool.
+  b5 = 4 #From cHT to HTpool.
   b6 = 1 #From HTpool to cHT.
   b7 = 1 #Other uses of HT remove HT.
   b8 = 100 #Histamine bound to autoreceptors produce G∗.

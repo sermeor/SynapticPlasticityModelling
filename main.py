@@ -23,9 +23,13 @@ z0 = [3.1968, 140.3708, 1.4717,  100, 250, 300, 0.7221, 1.3593, 1.0084, 2.0126, 
 #Get solution of the differential equation.
 x = odeint(comp_model, z0, time_array) 
 
+print('Parameters:', x[-1, :])
+
+print('Change:', x[-1, :] - np.array(z0))
 
 plt.figure()
 plt.plot(time_array, x[:, 2])
 plt.xlabel('Time (h)')
 plt.ylabel('eHA concentration (uM)')
 plt.show()
+

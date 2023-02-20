@@ -40,11 +40,11 @@ def comp_model(z, t):
   
 
   ## Histamine neuron constants. 
-  b1 = 10  #HA leakage from the cytosol to the extracellular space.
+  b1 = 15 # 10  #HA leakage from the cytosol to the extracellular space.
   b2 = 0.75*3.5  #HA release per action potential.
   b3 = 0.05  #HA removal from the extracellular space
   b4 = .25  #Strength of stabilization of bHT to bHT0.
-  b5 = 4 #From cHT to HTpool.
+  b5 = 2.5 #4 #From cHT to HTpool.
   b6 = 1 #From HTpool to cHT.
   b7 = 1 #Other uses of HT remove HT.
   b8 = 100 #Histamine bound to autoreceptors produce G∗.
@@ -60,7 +60,6 @@ def comp_model(z, t):
   g0HH = 10  #Total g-coupled protein for H3 on HA neuron
   t0HH = 10 #Total T protein for H3 on HA neuron
   b0HH = 10  #Total bound H3 receptors on HA neuron
-  
   
   #Steady state values.
   gstar_ha_basal =  0.7484 #Equilibrium concentration of g* histamine in H3 receptor.
@@ -79,7 +78,6 @@ def comp_model(z, t):
   dz[9] = H1ha(z[2])*VHATg(z[2]) - b14*(z[9] - z[2]) - VHNMTg(z[9]) + VHTDCg(z[10])
   dz[10] = - VHTDCg(z[10]) + VHTLg(z[3]) - b15*z[10] + b16*z[11]
   dz[11] =  b15*z[10] - b16*z[11] - b17*z[11]
-  
   
 
   return dz

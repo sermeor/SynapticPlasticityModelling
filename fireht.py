@@ -1,19 +1,20 @@
-## Histamine firing function. 
-# Units in events/h.
-# 
+# Function of serotonin neuron firing.
+#Commented functions are different firing paradigms. 
+# UNITS of f() in events/h, time variables in seconds. 
+
 import numpy as np
 
-def fireha(t, i_factor):
-    # Units in events/h.
+def fireht(t, i_factor):
+    # UNITS of f() in events/h, time variables in seconds.
     n = len(t)
-    r = 150
+    r = 8
     repeat_time = 60*10
     t_start = 5
     t_flip = 7
     t_end = 15
     basal = 1
     b = 2
-    max_f = 10
+    max_f = 1.5
     stim_boolean = 0
 
     f = np.zeros(n)

@@ -4,5 +4,8 @@
 # Units in uM. 
 def inhibRHAtoHA(b, c):
   #b = gstar
-  a = 1 - (3.5)*(b - c)     
+  min_a = 0
+  a = 1 - (2)*(b - c)
+  if a<min_a:
+    a = min_a
   return a

@@ -7,4 +7,4 @@ def activR5HTtoHA(b, c):
   a = 1 + (3)*(b - c)
   if a<min_a:
     a = min_a
-return a
+  return a

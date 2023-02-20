@@ -4,5 +4,5 @@
 def  VHAT(b):
   km = 10       
   vmax = 4128.3        
-  a = vmax*(b/(km + b));
+  a = vmax*(b/(km + b))
   return a

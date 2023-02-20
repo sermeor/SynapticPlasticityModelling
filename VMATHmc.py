@@ -6,6 +6,7 @@ def VMATHmc(b, c):
   k = 24     
   V =  21104
   a = (V*(b/(k + b)) - 5*c)
-  a[a < 0] = 0 # Make sure a is not negative
+  if a<0:
+    a = 0 #Make sure is not negative. 
 
   return a

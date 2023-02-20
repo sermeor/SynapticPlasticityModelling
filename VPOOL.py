@@ -2,7 +2,7 @@
 # b = trp
 # c = pool
 # UNITS IN uM and uM/h. 
-def VPOOL(b,c):
+def VPOOL(b, c):
   k1 = 9 #to pool
   k2 = 0.6 #from pool
   a = (k1*b - k2*c)

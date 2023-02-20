@@ -5,6 +5,6 @@
 def inhibsynHAtoHA(b, c):
   min_a = 0
   a = 1 - (0.1)*(b - c)
-  if a<min_a:
+  if a < min_a:
     a = min_a
   return a

@@ -2,6 +2,7 @@ from scipy.integrate._ivp.common import validate_max_step
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import math 
 from comp_model import *
@@ -10,9 +11,9 @@ from comp_model import *
 #find the ks that give the diff eq to 0
 
 #Time array.
-t_factor = 1 # Time factor for graphs.
-time = 300/t_factor # Time of simulation depending on t_factor.
-sampling_rate = 1*t_factor #number of samples per time factor units.
+t_factor = 3600 # Time factor for graphs.
+time = 30/t_factor # Time of simulation depending on t_factor.
+sampling_rate = 10*t_factor #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
 
 
@@ -74,15 +75,15 @@ y0 = [95.9766, 0.0994, 0.9006, 20.1618, 1.6094, 0.0373, 63.0383, 280.0048, 0.060
 arguments = (v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_dose*SSRI_bioavailability, fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_dose*FMH_bioavailability,  mc_switch, mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, vht_basal, vha_basal)
  
 #Get solution of the differential equation.
-x = odeint(comp_model, z0, time_array, args = arguments) 
+x = solve_ivp(comp_model, [0, 30/3600], y0 , args = arguments) 
 
-print('Parameters:', x[-1, :])
+#print('Parameters:', x[-1, :])
 
-print('Change:', x[-1, :] - np.array(z0))
+#print('Change:', x[-1, :] - np.array(z0))
 
 plt.figure()
-plt.plot(time_array, x[:, 2])
+plt.plot(x.y[:, 8])
 plt.xlabel('Time (h)')
-plt.ylabel('eHA concentration (uM)')
+plt.ylabel('e5HT concentration (nM)')
 plt.show()
 

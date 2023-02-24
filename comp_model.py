@@ -1,18 +1,63 @@
-from os.path import dirname, basename, isfile, join
-import glob
 import numpy as np
+from Fcns.activR5HTtoHA import *
+from Fcns.allo_ssri_ki import *
+from Fcns.degran_ha_mc import *
+from Fcns.fireha import *
+from Fcns.fireht import *
+from Fcns.FMH_inj import *
+from Fcns.H1ha import *
+from Fcns.H1ht import *
+from Fcns.HTDCin import *
+from Fcns.inhibR5HTto5HT import *
+from Fcns.inhibRHAto5HT import *
+from Fcns.inhibRHAtoHA import *
+from Fcns.inhibsyn5HTto5HT import *
+from Fcns.inhibsynHAtoHA import *
+from Fcns.k_5ht1ab_rel_ps import *
+from Fcns.k_5ht1ab_rel_sp import *
+from Fcns.k_fmh_inh import *
+from Fcns.k_ssri_reupt import *
+from Fcns.mc_activation import *
+from Fcns.SSRI_inj import *
+from Fcns.TCcatab import *
+from Fcns.VAADC import *
+from Fcns.VDRR import *
+from Fcns.vha_trafficking import *
+from Fcns.VHAT import *
+from Fcns.VHATg import *
+from Fcns.VHATmc import *
+from Fcns.VHNMT import *
+from Fcns.VHNMTg import *
+from Fcns.VHNMTmc import *
+from Fcns.vht_trafficking import *
+from Fcns.VHTDC import *
+from Fcns.VHTDCg import *
+from Fcns.VHTDCmc import *
+from Fcns.VHTL import *
+from Fcns.VHTLg import *
+from Fcns.VHTLmc import *
+from Fcns.VMAT import *
+from Fcns.VMATH import *
+from Fcns.VMATHmc import *
+from Fcns.VPOOL import *
+from Fcns.VSERT import *
+from Fcns.VTPH import *
+from Fcns.VTRPin import *
+from Fcns.VUP2 import *
 
-modules = glob.glob(join(dirname(__file__), "*.py"))
-__all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__init__.py')]
 
-print(modules)
+
+
 
 
 def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj, 
   fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_q_inj, mc_switch, 
   mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, 
   vht_basal, vha_basal):
-  dy = np.zeros(53)
+
+
+    
+  dy = np.zeros(54)
   
   # Serotonin Terminal Model
   NADP = 26  # NADP concentration in uM.
@@ -86,7 +131,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[5] = VAADC(y[4]) - VMAT(y[5], y[6]) - VMAT(y[5], y[7]) + VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - TCcatab(y[5]) - a15 * (y[5] - y[8])
   dy[6] = VMAT(y[5], y[6]) - a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] + vht_trafficking(y[6], vht_basal)
   dy[7] = VMAT(y[5], y[7]) - a15 * vht_trafficking(y[6], vht_basal)
-  dy[8] = -a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] + VSERT(y[8], y[19], ssri, allo_ssri_ki) - a11 * H1ht(y[8], eht_basal) * VUP2(y[8]) - a14 * y[8] + a8 * (y[5] - y[8]) + a9 * (y[14] - y[8]) 
+  dy[8] = -a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] + VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - a11 * H1ht(y[8], eht_basal) * VUP2(y[8]) - a14 * y[8] + a8 * (y[5] - y[8]) + a9 * (y[14] - y[8]) 
   dy[9] = TCcatab(y[5]) + TCcatab(y[14]) - a10 * y[9]
   dy[10] = VPOOL(y[3], y[10]) - a13 * y[10]
   dy[11] = a2 * y[13]**2 * (g0 - y[11]) - a3 * y[12] * y[11]
@@ -248,4 +293,6 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[51] = k12f * (y[50] * (1 - protein_binding_fmh)) - k21f * (y[51] * (1 - protein_brain_binding_fmh))
   dy[52] = k13f * (y[50] * (1 - protein_binding_fmh)) - k31f * y[52]
   dy[53] = -k_fmh_inh(fmh) * y[53] + HTDCin(y[53])
+
+  return dy
 

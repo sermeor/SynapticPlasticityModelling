@@ -8,6 +8,6 @@ def VTPH(b, d):
   k2 = 20 # Km for BH4 Haavik05
   k4 = 1000 # (Ki is 970 in Haavik05)
   k5 = 278 # Vmax mult by two when we halved inhib term at steady state
-  a = (k5*b)/(k1 + b + b^2/k4)*(d/(k2 + d))
+  a = (k5*b)/(k1 + b + b**2/k4)*(d/(k2 + d))
 
   return a

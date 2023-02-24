@@ -4,9 +4,9 @@
 #(removal) and increases the density of SERTs. 
 def k_5ht1ab_rel_sp(g, gbasal):
   gdiff = g - gbasal
-  max_r = 2; # Max increase of speed.
-  min_r = 0; # Min value of speed.
-  b = 7.5; # Strength. 
+  max_r = 2 # Max increase of speed.
+  min_r = 0 # Min value of speed.
+  b = 7.5 # Strength. 
   ratio = 1 - b * gdiff
   if ratio > max_r:
     ratio = max_r

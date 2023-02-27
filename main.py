@@ -35,7 +35,7 @@ v2 = brain_volume
 v3 = peripheral_volume
 
 #Dose parameters for escitalopram. 
-SSRI_dose_factor = 4.11                       # mg/kg of body weight. 
+SSRI_dose_factor = 0                      # mg/kg of body weight. 
 SSRI_start_time = 1*3600/t_factor           # Starting time of SSRI dose in same units as t_factor.
 SSRI_dose = (SSRI_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 SSRI_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
@@ -75,14 +75,15 @@ y0 = [95.9766, 0.0994, 0.9006, 20.1618, 1.6094, 0.0373, 63.0383, 280.0048, 0.060
 arguments = (v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_dose*SSRI_bioavailability, fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_dose*FMH_bioavailability,  mc_switch, mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, vht_basal, vha_basal)
  
 #Get solution of the differential equation.
-x = solve_ivp(comp_model, [0, 30/3600], y0 , args = arguments) 
+x = odeint(comp_model, y0, time_array, args = arguments, mxstep = 10000) 
 
 #print('Parameters:', x[-1, :])
 
 #print('Change:', x[-1, :] - np.array(z0))
 
 plt.figure()
-plt.plot(x.y[:, 8])
+plt.plot(x[:, 8])
+#plt.ylim(x[0, 7]-10, x[0, 7] + 10)
 plt.xlabel('Time (h)')
 plt.ylabel('e5HT concentration (nM)')
 plt.show()

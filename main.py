@@ -6,18 +6,16 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import math 
 from comp_model import *
+from comp_model_dummy import *
 
 #the equations model the differential terms of this model, calculate how much these variables are going to change in each iterations
 #find the ks that give the diff eq to 0
 
 #Time array.
 t_factor = 3600 # Time factor for graphs.
-time = 2*3600/t_factor # Time of simulation depending on t_factor.
-sampling_rate = 10*t_factor #number of samples per time factor units.
+time = 1*3600/t_factor # Time of simulation depending on t_factor.
+sampling_rate = 100*t_factor #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
-
-
-
 
 ## Compartmental models parameters.
 weight = 20                          # Mouse weight in g
@@ -75,16 +73,14 @@ y0 = [95.9766, 0.0994, 0.9006, 20.1618, 1.6094, 0.0373, 63.0383, 280.0048, 0.060
 arguments = (v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_dose*SSRI_bioavailability, fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_dose*FMH_bioavailability,  mc_switch, mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, vht_basal, vha_basal)
  
 #Get solution of the differential equation.
-x = odeint(comp_model, y0, time_array, args = arguments) 
 
-#print('Parameters:', x[-1, :])
+sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = time_array, y0 = y0, method = 'DOP853', args = arguments)
 
-#print('Change:', x[-1, :] - np.array(z0))
 
 plt.figure()
-plt.plot(x[:, 8])
-#plt.ylim(x[0, 7]-10, x[0, 7] + 10)
+plt.plot(sol.y[8, :]*1000)
 plt.xlabel('Time (h)')
 plt.ylabel('e5HT concentration (nM)')
 plt.show()
+
 

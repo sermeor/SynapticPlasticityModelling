@@ -12,7 +12,7 @@ from comp_model import *
 
 #Time array.
 t_factor = 3600 # Time factor for graphs.
-time = 30/t_factor # Time of simulation depending on t_factor.
+time = 2*3600/t_factor # Time of simulation depending on t_factor.
 sampling_rate = 10*t_factor #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
 
@@ -35,8 +35,8 @@ v2 = brain_volume
 v3 = peripheral_volume
 
 #Dose parameters for escitalopram. 
-SSRI_dose_factor = 0                      # mg/kg of body weight. 
-SSRI_start_time = 1*3600/t_factor           # Starting time of SSRI dose in same units as t_factor.
+SSRI_dose_factor = 10                      # mg/kg of body weight. 
+SSRI_start_time = 0*3600/t_factor           # Starting time of SSRI dose in same units as t_factor.
 SSRI_dose = (SSRI_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 SSRI_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
 SSRI_bioavailability = 0.8
@@ -75,7 +75,7 @@ y0 = [95.9766, 0.0994, 0.9006, 20.1618, 1.6094, 0.0373, 63.0383, 280.0048, 0.060
 arguments = (v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_dose*SSRI_bioavailability, fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_dose*FMH_bioavailability,  mc_switch, mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, vht_basal, vha_basal)
  
 #Get solution of the differential equation.
-x = odeint(comp_model, y0, time_array, args = arguments, mxstep = 10000) 
+x = odeint(comp_model, y0, time_array, args = arguments) 
 
 #print('Parameters:', x[-1, :])
 

@@ -14,7 +14,7 @@ def fireht(t, i_factor):
   basal = 1
   b = 2
   max_f = 1.5
-  stim_boolean = 1
+  stim_boolean = 0
   
   
   if stim_boolean == 0:

@@ -16,8 +16,8 @@ def fireha(t, i_factor):
   
   if stim_boolean == 0:
     f = basal * i_factor
-  if f>max_f:
-    f = max_f
+    if f>max_f:
+      f = max_f
     return f
   
   time = t * 3600

@@ -46,10 +46,6 @@ from Fcns.VTRPin import *
 from Fcns.VUP2 import *
 
 
-
-
-
-
 def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj, 
   fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_q_inj, mc_switch, 
   mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, 
@@ -83,8 +79,8 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   a20 = 66.2992  # decay of Tha*.
   a21 = 5  # eha binds to heteroreceptors. 
   a22 = 65.6179   # eha dissociates from heteroreceptors.
-  g0 = 10 # total g-protein of serotonin autoreceptors.                           
-  t0 = 10 # total T protein of serotonin autoreceptors.                           
+  g0 = 10 # total g-protein of serotonin autoreceptors.                         
+  t0 = 10 # total T protein of serotonin autoreceptors.                         
   b0 = 10 # total serotonin autoreceptors.
   gh0 = 10 # total g-protein of histamine heteroreceptors. 
   th0 =  10  # total T regulary protein of histamine heteroreceptors. 
@@ -128,30 +124,8 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[4] = inhibsyn5HTto5HT(y[11], gstar_5ht_basal) * VTPH(y[3], y[2]) - VAADC(y[4])
   dy[5] = VAADC(y[4]) - VMAT(y[5], y[6]) - VMAT(y[5], y[7]) + VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - TCcatab(y[5]) - a15 * (y[5] - y[8])
   dy[6] = VMAT(y[5], y[6]) - a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] + vht_trafficking(y[6], vht_basal)
-    
   dy[7] = VMAT(y[5], y[7]) - a15 * vht_trafficking(y[6], vht_basal)
-
-
-    
   dy[8] = a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] - VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - a11 * H1ht(y[8], eht_basal) * VUP2(y[8]) - a14 * y[8] + a8 * (y[5] - y[8]) + a9 * (y[14] - y[8]) 
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
   dy[9] = TCcatab(y[5]) + TCcatab(y[14]) - a10 * y[9] 
   dy[10] = VPOOL(y[3], y[10]) - a13 * y[10]
   dy[11] = a2 * y[13]**2 * (g0 - y[11]) - a3 * y[12] * y[11]  
@@ -167,9 +141,7 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[21] = k_si * y[19]  - k_is * y[21]
 
 
-    
-
-
+  # Escitalopram pharmacokinetics model
   # Rates between comparments (h-1).
   k01 = 0.6
   k10 = 3
@@ -188,10 +160,11 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   # y[25] = Periphery concentration in ug.
   
   # Differential equations.
-  dy[22] = 0#SSRI_inj(t, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj) - k01*(y[22])
-  dy[23] = 0#k01*(y[22]) - (k10 + k12)*(y[23]*(1-protein_binding)) + k21*(y[24]*(1-protein_brain_binding)) - k13*(y[23]*(1-protein_binding)) + k31*(y[25])
-  dy[24] = 0#k12*(y[24]*(1-protein_binding)) - k21*(y[24]*(1-protein_brain_binding))
-  dy[25] = 0#k13*(y[23]*(1-protein_binding)) - k31*(y[25])
+  dy[22] = SSRI_inj(t, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj) - k01*(y[22])
+  dy[23] = k01*(y[22]) - (k10 + k12)*(y[23]*(1-protein_binding)) + k21*(y[24]*(1-protein_brain_binding)) - k13*(y[23]*(1-protein_binding)) + k31*(y[25])
+  dy[24] = k12*(y[24]*(1-protein_binding)) - k21*(y[24]*(1-protein_brain_binding))
+  dy[25] = k13*(y[23]*(1-protein_binding)) - k31*(y[25])
+    
 
   ## Histamine Terminal Model. 
   b1 = 15  #HA leakage from the cytosol to the extracellular space. 
@@ -221,8 +194,8 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   g0HH = 10  #Total gstar for H3 on HA neuron
   t0HH = 10 #Total tstar for H3 autoreceptors on HA neuron
   b0HH = 10  #Total H3 autoreceptors on HA neuron
-  g05ht = 10 # total g-protein of serotonin heteroreceptors in histamine varicosity.                           
-  t05ht = 10 # total T protein serotonin heteroreceptors in histamine varicosity.                           
+  g05ht = 10 # total g-protein of serotonin heteroreceptors in histamine varicosity.
+  t05ht = 10 # total T protein serotonin heteroreceptors in histamine varicosity.
   b05ht = 10 # total serotonin heteroreceptors in histamine varicosities.
   HTin = 636.5570 # Histidine input to blood histidine uM/h. 
     
@@ -244,20 +217,33 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   # y[41] = ghtpool
 
 
-  dy[26] = 0#inhibsynHAtoHA(y[34], gstar_ha_basal) * y[53] * VHTDC(y[32]) - VMATH(y[26], y[27]) - VHNMT(y[26]) - b1 * (y[26] - y[29]) + VHAT(y[29]) - VMATH(y[26], y[28])
-  dy[27] = 0#VMATH(y[26], y[27]) - fireha(t, inhibRHAtoHA(y[34], gstar_ha_basal) * activR5HTtoHA(y[37], gstar_5ht_basal)) * b2 * y[27] + vha_trafficking(y[27], vha_basal)
-  dy[28] = 0#VMATH(y[26], y[28]) - vha_trafficking(y[27], vha_basal)
-  dy[29] = 0#fireha(t, inhibRHAtoHA(y[34], gstar_ha_basal) * activR5HTtoHA(y[37], gstar_5ht_basal)) * b2 * y[27] - VHAT(y[29]) + b3 * (y[30] - y[29]) + b1 * (y[26] - y[29]) - H1ha(y[29]) * VHATg(y[29]) - b4 * y[29] - mc_activation(t, mc_switch, mc_start_time) * VHATmc(y[29]) + inhibRHAtoHA(y[46], gstar_ha_basal) * degran_ha_mc(mc_activation(t, mc_switch, mc_start_time)) * y[45]
-  dy[30] = 0#H1ha(y[29]) * VHATg(y[29]) - b3 * (y[30] - y[29]) - VHNMTg(y[30]) + (1 + b12 * mc_activation(t, mc_switch, mc_start_time)) * y[53] * VHTDCg(y[40])
-  dy[31] = 0#HTin - VHTL(y[31]) - VHTLg(y[31]) - b5 * (y[31] - bht0) - mc_activation(t, mc_switch, mc_start_time) * VHTLmc(y[31])
-  dy[32] = 0#VHTL(y[31]) - inhibsynHAtoHA(y[34], gstar_ha_basal) * y[53] * VHTDC(y[32]) - b6 * y[32] + b7 * y[33]
-  dy[33] = 0#b6 * y[32] - b7 * y[33] - b8 * y[33]
-  dy[34] = 0#b13 * y[36]**2 * (g0HH - y[34]) - b14 * y[35] * y[34]
-  dy[35] = 0#b15 * y[34]**2 * (t0HH - y[35]) - b16 * y[35]
-  dy[36] = 0#b17 * y[29] * (b0HH - y[36]) - b18 * y[36]
-  dy[37] = 0#b19 * y[39]**2 * (g05ht - y[37]) - b20 * y[38] * y[37]
+  dy[26] = inhibsynHAtoHA(y[34], gstar_ha_basal) * y[53] * VHTDC(y[32]) - VMATH(y[26], y[27]) - VHNMT(y[26]) - b1 * (y[26] - y[29]) + VHAT(y[29]) - VMATH(y[26], y[28])
+  dy[27] = VMATH(y[26], y[27]) - fireha(t, inhibRHAtoHA(y[34], gstar_ha_basal) * activR5HTtoHA(y[37], gstar_5ht_basal)) * b2 * y[27] + vha_trafficking(y[27], vha_basal)
+  dy[28] = VMATH(y[26], y[28]) - vha_trafficking(y[27], vha_basal)
+    
+  dy[29] = fireha(t, inhibRHAtoHA(y[34], gstar_ha_basal) * activR5HTtoHA(y[37], gstar_5ht_basal)) * b2 * y[27] - VHAT(y[29]) + b3 * (y[30] - y[29]) + b1 * (y[26] - y[29]) - H1ha(y[29]) * VHATg(y[29]) - b4 * y[29] - mc_activation(t, mc_switch, mc_start_time) * VHATmc(y[29]) + inhibRHAtoHA(y[46], gstar_ha_basal) * degran_ha_mc(mc_activation(t, mc_switch, mc_start_time)) * y[45]
+    
+  dy[30] = H1ha(y[29]) * VHATg(y[29]) - b3 * (y[30] - y[29]) - VHNMTg(y[30]) + (1 + b12 * mc_activation(t, mc_switch, mc_start_time)) * y[53] * VHTDCg(y[40])
 
 
+    
+  dy[31] = HTin - VHTL(y[31]) - VHTLg(y[31]) - b5 * (y[31] - bht0) - mc_activation(t, mc_switch, mc_start_time) * VHTLmc(y[31])
+
+    
+  dy[32] = VHTL(y[31]) - inhibsynHAtoHA(y[34], gstar_ha_basal) * y[53] * VHTDC(y[32]) - b6 * y[32] + b7 * y[33]
+  dy[33] = b6 * y[32] - b7 * y[33] - b8 * y[33]
+  dy[34] = b13 * y[36]**2 * (g0HH - y[34]) - b14 * y[35] * y[34]
+  dy[35] = b15 * y[34]**2 * (t0HH - y[35]) - b16 * y[35]
+  dy[36] = b17 * y[29] * (b0HH - y[36]) - b18 * y[36]
+  dy[37] = b19 * y[39]**2 * (g05ht - y[37]) - b20 * y[38] * y[37]
+  dy[38] = (b21*y[37]**2*(t05ht - y[38])  - b22*y[38])
+  dy[39] = (b23*y[8]*(b05ht - y[39])  - b24*y[39])
+  dy[40] = VHTLg(y[31]) - (1 + b12*mc_activation(t, mc_switch, mc_start_time)) * y[53] * VHTDCg(y[40]) - b9 * y[40] + b10 * y[41]
+  dy[41] = b9 * y[40] - b10 * y[41] - b11 * y[41]
+
+
+
+    
   # Mast Cell Model
   # y[42] = cht. 
   # y[43] = chtpool.
@@ -280,13 +266,14 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   t0Hmc = 10 #Total tstar for H3 on mast cell.
   b0Hmc = 10  #Total H3 receptors on mast cell.
 
-  dy[42] = 0#mc_activation(t, mc_switch, mc_start_time) * VHTLmc(y[31]) - inhibsynHAtoHA(y[46], gstar_ha_basal) * y[53] * VHTDCmc(y[42]) - c1 * y[42] + c2 * y[43]
-  dy[43] = 0#c1 * y[42] - c2 * y[43] - c3 * y[43]
-  dy[44] = 0#inhibsynHAtoHA(y[46], gstar_ha_basal) * y[53] * VHTDCmc(y[42]) - VMATHmc(y[44], y[45]) - VHNMTmc(y[44]) + mc_activation(t, mc_switch, mc_start_time) * VHATmc(y[29])
-  dy[45] = 0#VMATHmc(y[44], y[45]) - inhibRHAtoHA(y[46], gstar_ha_basal) * degran_ha_mc(mc_activation(t, mc_switch, mc_start_time)) * y[45]
-  dy[46] = 0#c4 * y[48]**2 * (g0Hmc - y[46]) - c5 * y[47] * y[46]
-  dy[47] = 0#c6 * y[46]**2 * (t0Hmc - y[47]) - c7 * y[47]
-  dy[48] = 0#c8 * y[29] * (b0Hmc - y[48]) - c9 * y[48]
+  dy[42] = mc_activation(t, mc_switch, mc_start_time) * VHTLmc(y[31]) - inhibsynHAtoHA(y[46], gstar_ha_basal) * y[53] * VHTDCmc(y[42]) - c1 * y[42] + c2 * y[43]
+    
+  dy[43] = c1 * y[42] - c2 * y[43] - c3 * y[43]
+  dy[44] = inhibsynHAtoHA(y[46], gstar_ha_basal) * y[53] * VHTDCmc(y[42]) - VMATHmc(y[44], y[45]) - VHNMTmc(y[44]) + mc_activation(t, mc_switch, mc_start_time) * VHATmc(y[29])
+  dy[45] = VMATHmc(y[44], y[45]) - inhibRHAtoHA(y[46], gstar_ha_basal) * degran_ha_mc(mc_activation(t, mc_switch, mc_start_time)) * y[45]
+  dy[46] = c4 * y[48]**2 * (g0Hmc - y[46]) - c5 * y[47] * y[46]
+  dy[47] = c6 * y[46]**2 * (t0Hmc - y[47]) - c7 * y[47]
+  dy[48] = c8 * y[29] * (b0Hmc - y[48]) - c9 * y[48]
 
 
   ## FMH Pharmacokinetics Model
@@ -302,17 +289,18 @@ def comp_model(y, t, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   protein_binding_fmh = 0.60
   protein_brain_binding_fmh = 0.15
   fmh = (y[51]/v2)*1000/(fmh_molecular_weight) # Concentration of FMH in uM -> umol/L. 
+    
   #y[49] = Peritoneum concentration in ug.
   #y[50] = Blood concentration in ug.
   #y[51] = Brain concentration in ug.
   #y[52] = Periphery concentration in ug. 
   #y[53] = Ratio of active HTDC in cytosol of histamine, glia and mast cells.
 
-  dy[49] = 0#FMH_inj(t, FMH_start_time, FMH_repeat_time, FMH_q_inj) - k01f * y[49]
-  dy[50] = 0#k01f * y[49] - (k10f + k12f) * (y[50] * (1 - protein_binding_fmh)) + k21f * (y[51] * (1 - protein_brain_binding_fmh)) - k13f * (y[50] * (1 - protein_binding_fmh)) + k31f * (y[52])
-  dy[51] = 0#k12f * (y[50] * (1 - protein_binding_fmh)) - k21f * (y[51] * (1 - protein_brain_binding_fmh))
-  dy[52] = 0#k13f * (y[50] * (1 - protein_binding_fmh)) - k31f * y[52]
-  dy[53] = 0#-k_fmh_inh(fmh) * y[53] + HTDCin(y[53])
+  dy[49] = FMH_inj(t, FMH_start_time, FMH_repeat_time, FMH_q_inj) - k01f * y[49]
+  dy[50] = k01f * y[49] - (k10f + k12f) * (y[50] * (1 - protein_binding_fmh)) + k21f * (y[51] * (1 - protein_brain_binding_fmh)) - k13f * (y[50] * (1 - protein_binding_fmh)) + k31f * (y[52])
+  dy[51] = k12f * (y[50] * (1 - protein_binding_fmh)) - k21f * (y[51] * (1 - protein_brain_binding_fmh))
+  dy[52] = k13f * (y[50] * (1 - protein_binding_fmh)) - k31f * y[52]
+  dy[53] = -k_fmh_inh(fmh) * y[53] + HTDCin(y[53])
 
   return dy
 

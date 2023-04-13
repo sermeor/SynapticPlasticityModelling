@@ -11,5 +11,8 @@ def mc_activation(t, mc_switch, mc_start_time):
     if t < mc_start_time:
       f = 0.001
     else:
-      f = c / (1 + np.exp(-b * (t - t1)))
+      if t < mc_start_time:
+        f = 0.001
+      else:
+        f = c / (1 + np.exp(-b * (t - t1)))
   return f

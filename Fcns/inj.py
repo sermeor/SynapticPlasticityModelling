@@ -1,7 +1,7 @@
-## Function that simulates the injection of escitalopram into the peritoneum.
+## Function that simulates the injection of escitalopram/FMH/ketamine into the peritoneum.
 #t_start is the time for the first dose, and t_repeat is the repetition
 #time in hours. inj_time is time that the injection lasts. Output units in ug/h. 
-def  SSRI_inj(t, t_start, t_repeat, q):
+def  inj(t, t_start, t_repeat, q):
   inj_time = 1/3600
   if t > t_start:
     n_stim = int((t - t_start)//t_repeat)

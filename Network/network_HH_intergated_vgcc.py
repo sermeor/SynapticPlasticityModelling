@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -228,6 +227,25 @@ def connectivity_update(C, act, N, NE, Cai, Cao):
 
 
 
+##Function of fraction CaMKII bound to Ca2+. 
+#F: fraction of CaMKII subunits bound to Ca+ /CaM.
+@njit
+def CaMKII(Cai):
+    K_H1 = 4 # The Ca2 activation Hill constant of CaMKII in uM.
+    return (Cai/K_H1)**4/(1 + ((Cai/K_H1)**4))
+
+
+
+##Function of fraction of BDNF bound to TrkB receptor (sigmoid).
+#bdnf: levels of BDNF protein in the extracellular space. 
+@njit
+def TrkB(bdnf):
+    return 1/(1 + np.exp(-bdnf))
+
+##Function to determine if action potential is backpropagating. 
+@njit
+def bAP(Vm, act):
+    return np.logical_or(Vm > 35, act > 0.7)
 
 
 
@@ -338,8 +356,16 @@ def comp_model(t, y, N, NE):
 
     a15 = 0.01 #Rate of increase of neuron activity from individual spike (ms-1).
     a16 = 0.0001 #Rate of decrease of neuron activity if neuron does not spike (ms-1).
+    
 
+    
+    #Synaptic plasticity variables.
+    #TEMP
+    bdnf = 0 #Levels of extracellular BDNF. 
     spike = spike_boolean(y[0]) #Discrete spikes.
+    CaMKII_bound = CaMKII(y[5]) #Bound Ca2+ to CaMKII protein. 
+    trkB_bound = TrkB(bdnf) #Bound BDNF to trkB. 
+    
 
     #Define Poisson input parameters
     rate = 0.1  # firing rate (ms^-1)

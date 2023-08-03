@@ -4,7 +4,7 @@ from Fcns.allo_ssri_ki import *
 from Fcns.degran_ha_mc import *
 from Fcns.fireha import *
 from Fcns.fireht import *
-from Fcns.FMH_inj import *
+from Fcns.inj import *
 from Fcns.H1ha import *
 from Fcns.H1ht import *
 from Fcns.HTDCin import *
@@ -18,7 +18,6 @@ from Fcns.k_5ht1ab_rel_sp import *
 from Fcns.k_fmh_inh import *
 from Fcns.k_ssri_reupt import *
 from Fcns.mc_activation import *
-from Fcns.SSRI_inj import *
 from Fcns.TCcatab import *
 from Fcns.VAADC import *
 from Fcns.VDRR import *
@@ -44,14 +43,16 @@ from Fcns.VSERT import *
 from Fcns.VTPH import *
 from Fcns.VTRPin import *
 from Fcns.VUP2 import *
+from Fcns.inhib_NMDA import *
 
 
 def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj, 
-  fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_q_inj, mc_switch, 
+  fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_q_inj, ket_start_time, ket_repeat_time, ket_q_inj, mc_switch, 
   mc_start_time, btrp0, eht_basal, gstar_5ht_basal, gstar_ha_basal, bht0, 
   vht_basal, vha_basal):
 
-  dy = np.zeros(51)
+  dy = np.zeros_like(y)
+  
   # Serotonin Terminal Model
   NADP = 26  # NADP concentration in uM.
   NADPH = 330    # NADPH concentration in uM.
@@ -159,7 +160,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   # y[25] = Periphery concentration in ug.
   
   # Differential equations.
-  dy[22] = SSRI_inj(t, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj) - k01*(y[22])
+  dy[22] = inj(t, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj) - k01*(y[22])
   dy[23] = k01*(y[22]) - (k10 + k12)*(y[23]*(1-protein_binding)) + k21*(y[24]*(1-protein_brain_binding)) - k13*(y[23]*(1-protein_binding)) + k31*(y[25])
   dy[24] = k12*(y[23]*(1-protein_binding)) - k21*(y[24]*(1-protein_brain_binding))
   dy[25] = k13*(y[23]*(1-protein_binding)) - k31*(y[25])
@@ -240,8 +241,6 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[40] = VHTLg(y[31]) - (1 + b12*mc_activation(t, mc_switch, mc_start_time)) * y[50] * VHTDCg(y[40]) - b9 * y[40] + b10 * y[41]
   dy[41] = b9 * y[40] - b10 * y[41] - b11 * y[41]
 
-
-
     
   # Mast Cell Model
   # y[42] = cht. 
@@ -260,7 +259,6 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[43] = c1 * y[42] - c2 * y[43] - c3 * y[43]
   dy[44] =  y[50] * VHTDCmc(y[42]) - VMATHmc(y[44], y[45]) - VHNMTmc(y[44]) + mc_activation(t, mc_switch, mc_start_time) * VHATmc(y[29])
   dy[45] = VMATHmc(y[44], y[45]) - degran_ha_mc(mc_activation(t, mc_switch, mc_start_time)) * y[45]
-
 
   ## FMH Pharmacokinetics Model
   # Rates between comparments (h-1). 
@@ -282,11 +280,54 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   #y[49] = Periphery concentration in ug. 
   #y[50] = Ratio of active HTDC in cytosol of histamine, glia and mast cells.
 
-  dy[46] = FMH_inj(t, FMH_start_time, FMH_repeat_time, FMH_q_inj) - k01f * y[46]
+  dy[46] = inj(t, FMH_start_time, FMH_repeat_time, FMH_q_inj) - k01f * y[46]
   dy[47] = k01f * y[46] - (k10f + k12f) * (y[47] * (1 - protein_binding_fmh)) + k21f * (y[48] * (1 - protein_brain_binding_fmh)) - k13f * (y[47] * (1 - protein_binding_fmh)) + k31f * (y[49])
   dy[48] = k12f * (y[47] * (1 - protein_binding_fmh)) - k21f * (y[48] * (1 - protein_brain_binding_fmh))
   dy[49] = k13f * (y[47] * (1 - protein_binding_fmh)) - k31f * y[49]
   dy[50] = -k_fmh_inh(fmh) * y[50] + HTDCin(y[50])
+
+  ##  Ketamine and norketamine pharmacokinetics model. -----------------
+  # y[51] = Peritoneum concentration of ketamine in ug.
+  # y[52] = Blood concentration of ketamine in ug.
+  # y[53] = Blood concentration of norketamine in ug.
+  # y[54] = Brain concentration of ketamine in ug.
+  # y[55] = Brain concentration of norketamine in ug.
+  # y[56] = Periphery concentration of norketamine in ug.
+  # y[57] = Periphery concentration of norketamine in ug. 
+  
+  #Rates between compartments (h-1). 
+  k01k = 1.5625
+  k10k = 82.5
+  k12k = 28.5
+  k21k = 5.25
+  k13k = 100
+  k31k = 5
+  d1 = 162.5 #ketamine -> norketamine in blood (h^-1). 
+  d2 = 0.05 #ketamine -> norketamine in brain (h^-1). 
+  d3 = 25 #ketamine -> norketamine in periphery (liver)  #(h^-1).
+
+
+  
+  # Parameters.
+  protein_binding_k = 0.60
+  protein_binding_nk = 0.5
+  protein_brain_binding_k = 0.15
+  
+  #Equations
+  dy[51] = inj(t,  ket_start_time, ket_repeat_time, ket_q_inj) - k01k*(y[51])
+  
+  dy[52] = k01k*(y[51]) - (k10k + k12k)*(y[52]*(1-protein_binding_k)) + k21k*(y[54]*(1-protein_brain_binding_k)) - k13k*(y[52]*(1-protein_binding_k)) + k31k*(y[56]) - d1 * y[52]
+
+  dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10k + k12k)*(y[53]*(1-protein_binding_nk)) - k21k*(y[55]*(1-protein_brain_binding_k)) - k13k*(y[53]*(1-protein_binding_nk)) + k31k*(y[57])
+  
+  dy[54] = k12k*(y[52]*(1-protein_binding_k)) - k21k*(y[54]*(1-protein_brain_binding_k)) - d2 * y[54]
+
+  dy[55] = d2 * y[54] + k12k*y[53]*(1-protein_binding_nk) - k21k*(y[55]*(1-protein_brain_binding_k))
+  
+  dy[56] = k13k*(y[52]*(1-protein_binding_k)) - k31k*(y[56]) - d3 * y[56]
+
+  dy[57] = d3 * y[56] + k13k*(y[53]*(1-protein_binding_nk)) - k31k*(y[57])
+
 
   return dy
 

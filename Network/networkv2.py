@@ -138,7 +138,55 @@ def dummy_NMDA(t):
     a = 0
   return a
 
+def g_AMPA(spikes, t, t_curr, NE):
+  tau_rise = 5 #ms
+  tau_fast = 5 #ms
+  tau_slow = 5 #ms
+  g_bar = 40 #pS
+  a = 1 # constant
 
+  spike_times = np.nonzero(spikes)
+  
+  g = 0 # potentially needs better value for equilibrium state
+
+  for i in spike_times:
+    rise = 1 - np.exp(-(t_curr-t[i])/tau_rise)
+    fast = a * (1 - np.exp(-(t_curr-t[i])/tau_fast))
+    slow = (1-a) * (1 - np.exp(-(t_curr-t[i])/tau_slow))
+
+    g += g_bar * rise * (fast + slow) * np.heaviside(t_curr - t[i], 1)
+  
+  return g
+
+def g_NMDA(spikes, t, t_curr):
+  tau_rise = 5 #ms
+  tau_decay = 50 #ms
+  g_bar = 1.5 * 10**3 #pS
+  a = 1 # constant
+  beta = 1/3.57 #constant 1/mM
+  alpha = 0.062 #constant mV
+  u = -65
+  c_mg = 1.2 # mM
+
+  spike_times = np.nonzero(spikes)
+  
+  g = 0 # potentially needs better value for equilibrium state
+
+  for i in spike_times:
+    rise = 1 - np.exp(-(t_curr-t[i])/tau_rise)
+    decay = np.exp(-(t_curr-t[i])/tau_decay)
+    g_infinity = 1/(1 + beta * np.exp(-alpha * u * c_mg))
+
+    g += g_bar * rise * decay * g_infinity * np.heaviside(t_curr-t[i], 1)
+  
+  return g
+
+# returns index in flattened version of array
+# desired index i, #neurons N, data y
+def index(i, N, y):
+  new_i = [x for x in range(i*N, (i+1)*N)]
+  
+  return new_i
 ## ODE model
 def comp_model(t, y, N, NE, theta, phi, beta, th):
   # Parameters of HH model
@@ -157,22 +205,16 @@ def comp_model(t, y, N, NE, theta, phi, beta, th):
   # g_GABA_A = k2*sum(y[6][i,NE:] * y[0][NE:])
 
 
-
-
-
-
-
-
-  g_AMPA = dummy_NMDA(t) #Factor of conductance of AMPA channels. 
-  g_NMDA = dummy_NMDA(t) #Conductance of NMDA channels.
-  g_GABA_A = 0 #Conductance of GABA A channels.
-  g_GABA_B = 0 #Conducance of GABA B channels.
-
   #Structure flatten y into list of arrays. 
   y = [y[:N], y[N:2*N], y[2*N:3*N], y[3*N:4*N], y[4*N:5*N], y[5*N:6*N], y[6*N:7*N], y[7*N:].reshape(N, N)]
 
   #Initialize differential list. 
   dy = [0, 0, 0, 0, 0, 0, 0, 0]
+  
+  g_AMPA = dummy_NMDA(t) #Factor of conductance of AMPA channels. 
+  g_NMDA = dummy_NMDA(t) #Conductance of NMDA channels.
+  g_GABA_A = 0 #Conductance of GABA A channels.
+  g_GABA_B = 0 #Conducance of GABA B channels.
 
   #Variable definitions. 
   #y[0] = state of network over time.

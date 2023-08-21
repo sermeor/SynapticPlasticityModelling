@@ -199,7 +199,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   b05ht = 10 # total serotonin heteroreceptors in histamine varicosities.
   HTin = 636.5570 # Histidine input to blood histidine uM/h. 
     
-  # y[26]= cha
+  # y[26] = cha
   # y[27] = vha 
   # y[28] = vha_reserve
   # y[29] = eha

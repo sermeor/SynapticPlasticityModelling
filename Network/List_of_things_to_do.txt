@@ -1,9 +1,1 @@
-Include internal calcium equation.
-Research NMDA receptor dependencies and effects.
-Fix NMDA current equation. 
-Build the equations for the connectivity matrix.
-Research GABA B receptor dependencies and effects.
-Set an equilibrium state: mean of median of connectivity matrix to stay constant.
-How serotonin and histamine have an effect on connectivity/plasticity.
-How connectivity has an effect on serotonin and histamine in the DRN.
-Add histamine and serotonin model.
+- 

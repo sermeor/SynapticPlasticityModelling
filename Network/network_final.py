@@ -183,10 +183,9 @@ def inward_Ca(g_NMDA, Vm, c):
 
 ##Function of outward calcium rate (uM/ms).
 @njit
-def outward_Ca(Cai):
-  Cai_eq = 0
+def outward_Ca(Cai, Cai_eq):
   c = 0.05  #Rate of calcium pump buffering (ms^-1).
-  return +c * (Cai - Cai_eq)
+  return + c * (Cai - Cai_eq)
 
 
 ##Function of GABA A current (mA/cm^2).
@@ -214,29 +213,24 @@ def spike_boolean(Vm):
   return result
 
 
-#Function that updates the connectivity matrix depending on activity of neuron (pre-synaptic connectivity).
+#Function that updates the connectivity matrix.
 @njit
-def connectivity_update(C, act, N, NE):
+def connectivity_update(C, act, N, NE, w_plas):
   # Postsynaptic update.
-  sigma = 0.5
-  w_ex = -0.1
-  w_inh = 0.1
+  sigma = 0.5 #Equilibrium activity of the neuron.
+  w_ex = - 0.1 #Weight of rate of change of post-synaptic connectivity of the neuron on excitatory plates (- when act>sigma, + when act<sigma, compensation).
+  w_inh = 0.1 #Weight of rate of change of post-synaptic connectivity of the neuron on inhibitory plates (+ when act>sigma, - when act<sigma, compensation).
   post_delta_C_row = (act - sigma)
   post_delta_C = np.empty((N, N), dtype=np.float32)
-  post_delta_C[:NE] = post_delta_C_row * w_ex
-  post_delta_C[NE:] = post_delta_C_row * w_inh
-	
+  post_delta_C[:NE] = post_delta_C_row * (w_ex + w_plas)
+  post_delta_C[NE:] = post_delta_C_row * (w_inh + w_plas)
 
   # Presynaptic update.
-  w = 0.1
+  w = 0.1 #Weight of rate of change of presynaptic connectivity of the neuron (+ when act>sigma, - when act<sigma).
   pre_delta_C = np.empty((N, N), dtype=np.float32)
   for i in range(N):  #rows
     pre_delta_C[i, :] = w * (act[i] - sigma)
 
-
-
-
-	
   # Sum both effects.
   delta_C = post_delta_C + pre_delta_C
 
@@ -247,31 +241,6 @@ def connectivity_update(C, act, N, NE):
 
   return delta_C
 
-
-##Function of fraction CaMKII bound to Ca2+.
-#F: fraction of CaMKII subunits bound to Ca+ /CaM.
-@njit
-def CaMKII(Cai):
-  K_H1 = 4  # The Ca2 activation Hill constant of CaMKII in uM.
-  return (Cai / K_H1)**4 / (1 + ((Cai / K_H1)**4))
-
-
-##Function of fraction of BDNF bound to TrkB receptor (sigmoid).
-#bdnf: levels of BDNF protein in the extracellular space.
-@njit
-def TrkB(bdnf):
-  return 1 / (1 + np.exp(-bdnf))
-
-##Function of fraction of p75_NTR proBDNF-bound.
-@njit
-def p75_NTR(bdnf, pro_bdnf):
-  return 1 / (1 + np.exp(-(1 * pro_bdnf + 0.1 * bdnf)))
-
-
-##Function to determine if action potential is backpropagating.
-@njit
-def bAP(Vm, act):
-  return np.logical_or(Vm > 35, act > 0.7)
 
 
 #Function that calculates g_AMPA, from AMPA input weights and connectivity weights.
@@ -307,13 +276,14 @@ def w_fast_update(wfe, wfe_decay, wfi, wfi_decay, Neurot, w_fast, N, NE):
   return alpha_w
 
 
-##Function that calculates the w_slow uptake.
+##Function that calculates the w_fast uptake.
 @njit
 def w_slow_update(wse, wse_decay, wsi, wsi_decay, Neurot, w_slow, N, NE):
   alpha_w = np.empty(N, dtype=np.float32)
   alpha_w[:NE] = wse * Neurot[:NE] - wse_decay * w_slow[:NE]
   alpha_w[NE:] = wsi * Neurot[NE:] - wsi_decay * w_slow[NE:]
   return alpha_w
+
 
 #Function of current given by Poison noise inputs (mA).
 @njit
@@ -339,6 +309,7 @@ def set_seed(seed):
   np.random.seed(seed)
   return
 
+
 ##Function of occupacy ratio of NMDA receptors depending on ketamine and norketamine concentration (uM)
 #This function assumes that k and nk don't inhibit each other, and that glutamate concentration has no effect on binding rate of k and nk, since their binding stregth is much greater.
 @njit
@@ -353,109 +324,185 @@ def inhib_NMDA(k, nk):
   return f
 
 
+
+
+
+
+
+##Function of fraction CaMKII bound to Ca2+.
+#F: fraction of CaMKII subunits bound to Ca+ /CaM.
+@njit
+def CaMKII(Cai, Cai_eq): #MIGHT NEED CHANGING FOR SIGMOID
+  K_H1 = 2  # The Ca2 activation Hill constant of CaMKII in uM.
+  b = K_H1 - Cai_eq #Value to set the function as 0.5 at Cai_eq.
+  return ((Cai + b) / K_H1)**4 / (1 + (((Cai + b) / K_H1)**4))
+
+
+##Function of fraction of BDNF bound to TrkB receptor (sigmoid).
+#bdnf: levels of BDNF protein in the extracellular space.
+@njit
+def TrkB(bdnf):
+  s = 10 #Slope of sigmoid.
+  return 1 / (1 + np.exp(-s*(bdnf - 0.5)))
+
+##Function of fraction of p75_NTR proBDNF-bound (sigmoid).
+@njit
+def p75_NTR(bdnf, pro_bdnf):
+  w_pro_bdnf = 0.9 #Factor of pro_bdnf.
+  w_bdnf = 1 -  w_pro_bdnf #Factor of bdnf.
+  s = 10 #Slope of sigmoid.
+  return 1 / (1 + np.exp(-s*(w_bdnf * pro_bdnf + w_pro_bdnf * bdnf - 0.5)))
+
+##Function of BDNF presence dependent on neuronal factors (sigmoid).
+@njit
+def bdnf_calc(bAP_events, g_AMPA, Cai, Cai_eq, eht, eht_eq):
+  delta_Cai = Cai - Cai_eq
+  delta_eht = eht - eht_eq
+  w_bAP = 0.1 #Weight of bAP on BDNF release.
+  w_g_AMPA = 0.1 #Weight of g_AMPA on BDNF release.
+  w_Cai = 0.1 #Weight of Cai increase above equilibrium on BDNF release.
+  w_eht = 0.1 #Weight of eht increase above equilibrium on BDNF release.
+  s = 10 #Slope of the sigmoid.
+  bdnf = 1 / (1 + np.exp(-s*(w_bAP*bAP_events + w_g_AMPA*g_AMPA + w_Cai*delta_Cai + w_eht * delta_eht)))
+  return bdnf
+
+##Function to determine if action potential is backpropagating.
+@njit
+def bAP(Vm, act):
+  return np.logical_or(Vm > 35, act > 0.7)
+
+
+# Weights of BDNF/proBDNF and CaMKII plasticity,
+#afecting the rate of change of the connectivity matrix.
+#Sigmoid that can go to negative values.
+@njit
+def plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound):
+  w_CaMKII_bound = 1 #Weight of CaMKII_bound
+  w_trkB_bound = 1 #Weight of trkB_bound
+  w_p75NTR_bound = 2 #Weight of p75NTR_bound
+  s = 10 #Slope of sigmoid.
+  w = 0.1 #Weight to convert to plasticity from sigmoid.
+  plasticity_weights = w/(1 + np.exp(-s*(w_CaMKII_bound*CaMKII_bound + w_trkB_bound*trkB_bound - w_p75NTR_bound*p75NTR_bound))) - 0.5
+  return plasticity_weights
+
+
+
+
+
+
+
+
+
+
+
+
 # ODE model
 @njit
 def comp_model(t, y, N, NE):
-	#Structure flatten y into 2D array.
-	y = flatten_y(y, N, 11)
-	
-	# Parameters of HH model
-	C_m = 1.0  # membrane capacitance (uF/cm^2)
-	Cai_eq = 0.1  #uM
-	
-	#Constants
-	a1 = (3) * 0.25  #Weight of excitatory AMPA inputs.
-	a2 = (3) * 0.25  #Weight of inhibitory GABA A inputs.
-	a3 = 50 * (1.5) * 0.25  #Weight of excitatory NMDA inputs; NMDA currents are defined differently so it's higher than others.
-	a4 = 5 * (1.5) * 0.25  #Weight of inhibitory GABA B inputs.
-	
-	a5 = 1  #Rate of production of neurotransmitter per spike (ms-1).
-	a6 = 0.25  #Rate of reuptake of neurotransmitter (ms-1).
-	
-	a7 = 0.05  #Rate of increase of excitatory w_fast (AMPA) from neurotransmitter presence (ms-1).
-	a8 = 0.1  #Rate of decrease of excitatory w_fast (AMPA) (ms-1).
-	
-	a9 = 0.03  #Rate of increase of inhibitory w_fast (GABA A) from neurotransmitter presence (ms-1).
-	a10 = 0.1  #Rate of decrease of inhibitory w_fast (GABA A) (ms-1).
-	
-	a11 = 0.025  #Rate of increase of excitatory w_slow (NMDA) from neurotransmitter presence (ms-1).
-	a12 = 0.020  #Rate of decrease of excitatory w_slow (NMDA) (ms-1).
-	
-	a13 = 0.001  #Rate of increase of inhibitory w_slow (GABA B) from neurotransmitter presence (ms-1).
-	a14 = 0.001  #Rate of decrease of inhibitory w_slow(GABA B) from neurotransmitter presence (ms-1).
-	
-	a15 = 0.01  #Rate of increase of neuron activity from individual spike (ms-1).
-	a16 = 0.0001  #Rate of decrease of neuron activity if neuron does not spike (ms-1).
-	
-	a17 = 1 #Rate of production of BDNF from proBDNF from bAP (ms-1).
-	a18 = 1 #Rate of production of BDNF from proBDNF from Cai>Cai_eq (ms-1).
-	a19 = 1 #Rate of production of BNDF due to post-synaptic excitatory neurotransmitter presence (ms-1). 
-	a20 = 1 #Rate of elimination of BDNF due to metabolism and other reasons (ms-1). 
-		
-		
-		
-	
-	#Synaptic plasticity variables.
-	spike = spike_boolean(y[0])  #Discrete spikes.
-	
-	
-	
-	#Define Poisson input parameters
-	rate = 0.1  # firing rate (ms^-1)
-	w1 = 10  # Excitatory noise synaptic weight
-	w2 = 2  #Inhibitory noise synaptic weight
-	
-	I_noise_e = noise(w1, rate, N)  #Poisson excitatory input noise.
-	I_noise_i = noise(w2, rate, N)  #Poisson inhibitory input noise.
-	
-	#Conductances.
-	g_AMPA = g_AMPA_calc(a1, y[11:], y[7], N, NE)  #Conductance factor of AMPA channels.
-	g_GABA_A = g_GABA_A_calc(a2, y[11:], y[7], N, NE)  # Conductance factor of GABA A channels.
-	g_NMDA = g_NMDA_calc(a3, y[11:], y[8], N,  NE)  # Conductance factor of NMDA channels.
-	g_GABA_B = g_GABA_B_calc(a4, y[11:], y[8], N, NE)  # Conductance factor of GABA B channels.
-	
-	#Initialize differential list.
-	dy = np.zeros_like(y, dtype=np.float32)
-	
-	#Variable in ODE.
-	#y[0] = Vm, membrane potential of neurons (mV).
-	#y[1] = m, activation gating variable for the voltage-gated sodium (Na+) channels.
-	#y[2] = h, activation gating variable for the voltage-gated potassium (K+) channels.
-	#y[3] = n, Inactivation gating variable for the Na+ channels.
-	#y[4] = c, activation of gatting variable.
-	#y[5] = Cai, internal calcium concentration (uM).
-	#y[6] = N, Neurotransmitter activity in synapse (pre-synaptic, of the neuron releasing it).
-	#y[7] = w_fast, synaptic weights of activation of fast receptors (AMPA, GABA A)(post-synaptic, of the neuron receiving).
-	#y[8] = w_slow, synaptic weights of activation of slow receptors (NMDA, GABA B)(post-synaptic, of the neuron receiving input).
-	#y[9] = Activity state of neuron (low/high state of neuron).
-	#y[10] = Ratio BDNF to proBDNF. 
-	#y[11:] = Connectivity matrix. 
-	
-	
-	#Differential equations.
-	dy[0] = (-I_Na(y[1], y[2], y[0]) - I_K(y[3], y[0]) - I_L(y[0]) - I_VGCC(y[4], y[0]) - I_AMPA(g_AMPA, y[0]) - I_NMDA(g_NMDA, y[0]) - I_GABA_A(g_GABA_A, y[0]) - I_GABA_B(g_GABA_B, y[0]) + I_noise_e - I_noise_i) / C_m
-	dy[1] = alpha_m(y[0]) * (1.0 - y[1]) - beta_m(y[0]) * y[1]
-	dy[2] = alpha_h(y[0]) * (1.0 - y[2]) - beta_h(y[0]) * y[2]
-	dy[3] = alpha_n(y[0]) * (1.0 - y[3]) - beta_n(y[0]) * y[3]
-	dy[4] = alpha_c(y[0]) * (1 - y[4]) - beta_c(y[0]) * y[4]
-	dy[5] = inward_Ca(g_NMDA, y[0], y[4]) - outward_Ca(y[5])
-	dy[6] = a5 * spike - a6 * y[6]
-	dy[7] = w_fast_update(a7, a8, a9, a10, y[6], y[7], N, NE)
-	dy[8] = w_slow_update(a11, a12, a13, a14, y[6], y[8], N, NE)
-	dy[9] = a15 * spike * (1 - y[9]) - a16 * y[9]
-	
-	
-	
-	dy[10] = (1-y[10]) - a20*y[10]
-	dy[11:] = connectivity_update(y[11:], y[9], N, NE)
-	
-	#flatten dy
-	dy = flatten_dy(dy)
-	return dy
+  #Structure flatten y into 2D array.
+  y = flatten_y(y, N, 10)
+
+  # Parameters of HH model
+  C_m = 1.0  # membrane capacitance (uF/cm^2)
+  Cai_eq = 0.1 #Equilibrium internal calcium (uM)
+
+  #Constants
+  a1 = (3) * 0.25  #Weight of excitatory AMPA inputs.
+  a2 = (3) * 0.25  #Weight of inhibitory GABA A inputs.
+  a3 = 50 * (1.5) * 0.25  #Weight of excitatory NMDA inputs; NMDA currents are defined differently so it's higher than others.
+  a4 = 5 * (1.5) * 0.25  #Weight of inhibitory GABA B inputs.
+
+  a5 = 1  #Rate of production of neurotransmitter per spike (ms-1).
+  a6 = 0.25  #Rate of reuptake of neurotransmitter (ms-1).
+
+  a7 = 0.05  #Rate of increase of excitatory w_fast (AMPA) from neurotransmitter presence (ms-1).
+  a8 = 0.1  #Rate of decrease of excitatory w_fast (AMPA) (ms-1).
+
+  a9 = 0.03  #Rate of increase of inhibitory w_fast (GABA A) from neurotransmitter presence (ms-1).
+  a10 = 0.1  #Rate of decrease of inhibitory w_fast (GABA A) (ms-1).
+
+  a11 = 0.025  #Rate of increase of excitatory w_slow (NMDA) from neurotransmitter presence (ms-1).
+  a12 = 0.020  #Rate of decrease of excitatory w_slow (NMDA) (ms-1).
+
+  a13 = 0.001  #Rate of increase of inhibitory w_slow (GABA B) from neurotransmitter presence (ms-1).
+  a14 = 0.001  #Rate of decrease of inhibitory w_slow(GABA B) from neurotransmitter presence (ms-1).
+
+  a15 = 0.01  #Rate of increase of neuron activity from individual spike (ms-1).
+  a16 = 0.0001  #Rate of decrease of neuron activity if neuron does not spike (ms-1).
+  a17 = 1
+  a18 = 1
+
+
+
+
+
+
+  #Define Poisson input parameters
+  rate = 0.1  # firing rate (ms^-1)
+  w1 = 10  # Excitatory noise synaptic weight
+  w2 = 2  #Inhibitory noise synaptic weight
+
+  I_noise_e = noise(w1, rate, N)  #Poisson excitatory input noise.
+  I_noise_i = noise(w2, rate, N)  #Poisson inhibitory input noise.
+
+  #Conductances.
+  g_AMPA = g_AMPA_calc(a1, y[10:], y[7], N, NE)  #Conductance factor of AMPA channels.
+  g_GABA_A = g_GABA_A_calc(a2, y[10:], y[7], N, NE)  # Conductance factor of GABA A channels.
+  g_NMDA = g_NMDA_calc(a3, y[10:], y[8], N,  NE)  # Conductance factor of NMDA channels.
+  g_GABA_B = g_GABA_B_calc(a4, y[10:], y[8], N, NE)  # Conductance factor of GABA B channels.
+
+
+  #Synaptic plasticity variables.
+  eht = 60 # Serotonin concentration (nM)
+  eht_eq = 60 #Serotonin concentration in equilibrium (nM)
+  spike = spike_boolean(y[0])  #Discrete spikes.
+  CaMKII_bound = CaMKII(y[5], Cai_eq)  #Bound Ca2+ to CaMKII protein (0 to 1).
+  bAP_events = bAP(y[0], y[9])  #Backpropagating potential events.
+  bdnf_c = bdnf_calc(bAP_events, g_AMPA, y[5], Cai_eq, eht, eht_eq) #Factor of BNDF levels presence in synapse.
+  trkB_bound = TrkB(bdnf_c)  #Bound BDNF to trkB, sigmoid.
+  p75NTR_bound = p75_NTR(bdnf_c, 1 - bdnf_c)  #Bound proBDNF and BDNF to p75NTR, sigmoid.
+  #Weights of plasticity processes (close to 1 when neuron is proactively forming connections,
+  #0 when the neuron is slower in making connections).
+  w_plas = plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound)
+
+  #Initialize differential list.
+  dy = np.zeros_like(y, dtype=np.float32)
+
+  #Variable in ODE.
+  #y[0] = Vm, membrane potential of neurons (mV).
+  #y[1] = m, activation gating variable for the voltage-gated sodium (Na+) channels.
+  #y[2] = h, activation gating variable for the voltage-gated potassium (K+) channels.
+  #y[3] = n, Inactivation gating variable for the Na+ channels.
+  #y[4] = c, activation of gatting variable.
+  #y[5] = Cai, internal calcium concentration (uM)
+  #y[6] = N, Neurotransmitter activity in synapse.
+  #y[7] = w_fast, synaptic weights of activation of fast receptors (AMPA, GABA A).
+  #y[8] = w_slow, synaptic weights of activation of slow receptors (NMDA, GABA B).
+  #y[9] = Activity state of neuron (low/high state).
+  #y[10] = Ratio BDNF to proBDNF.
+  #y[10:] = Connectivity matrix.
+
+  #Differential equations.
+  dy[0] = (-I_Na(y[1], y[2], y[0]) - I_K(y[3], y[0]) - I_L(y[0]) - I_VGCC(y[4], y[0]) - I_AMPA(g_AMPA, y[0]) - I_NMDA(g_NMDA, y[0]) - I_GABA_A(g_GABA_A, y[0]) - I_GABA_B(g_GABA_B, y[0]) + I_noise_e - I_noise_i) / C_m
+  dy[1] = alpha_m(y[0]) * (1.0 - y[1]) - beta_m(y[0]) * y[1]
+  dy[2] = alpha_h(y[0]) * (1.0 - y[2]) - beta_h(y[0]) * y[2]
+  dy[3] = alpha_n(y[0]) * (1.0 - y[3]) - beta_n(y[0]) * y[3]
+  dy[4] = alpha_c(y[0]) * (1 - y[4]) - beta_c(y[0]) * y[4]
+  dy[5] = inward_Ca(g_NMDA, y[0], y[4]) - outward_Ca(y[5], Cai_eq)
+  dy[6] = a5 * spike - a6 * y[6]
+  dy[7] = w_fast_update(a7, a8, a9, a10, y[6], y[7], N, NE)
+  dy[8] = w_slow_update(a11, a12, a13, a14, y[6], y[8], N, NE)
+  dy[9] = a15 * spike * (1 - y[9]) - a16 * y[9]
+
+  dy[10:] = connectivity_update(y[10:], y[9], N, NE, w_plas)
+
+  #flatten dy
+  dy = flatten_dy(dy)
+  return dy
 
 
 #Constant parameters
-N = 5  #Number of neurons.
+N = 100  #Number of neurons.
 NE = int(0.8 * N)  #Number of excitatory neurons.
 
 random_seed = 25  #Seed of the pseudo-random number generator.
@@ -464,7 +511,7 @@ np.random.seed(random_seed)  #Set seed in non-compiled code.
 
 #Time array.
 t_factor = 1  # Time factor for graphs.
-time = 10 / t_factor  # Time of simulation depending on t_factor.
+time = 60*1000 / t_factor  # Time of simulation depending on t_factor.
 sampling_rate = 1 * t_factor  #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1), dtype=np.float32)
 
@@ -479,10 +526,10 @@ N_0 = np.zeros(N)  #Neurotransmitter.
 g_fast_0 = np.zeros(N)  #Fast conductances.
 g_slow_0 = np.zeros(N)  #Membrane potential. #Slow conductances.
 act = 0.5 * np.ones(N)  #Activity state.
-BDNF0 = 0.5*np.ones(N) # Ratio BDNF to proBDNF. 
+
 C = np.random.rand(N, N).flatten()  #Connectivity matrix.
 
-y0 = np.concatenate((Vm, m, h, n, c, Ca_0, N_0, g_fast_0, g_slow_0, act, BDNF0, C), axis=0)  #Flatten initial conditions.
+y0 = np.concatenate((Vm, m, h, n, c, Ca_0, N_0, g_fast_0, g_slow_0, act, C), axis=0)  #Flatten initial conditions.
 arguments = (N, NE)  #Constant arguments.
 
 #Get solution of the differential equation.
@@ -508,7 +555,7 @@ for i in range(0, n_iterations):
 y = [sol.y[:N, :], sol.y[N:2 * N, :], sol.y[2 * N:3 * N, :],
 sol.y[3 * N:4 * N, :], sol.y[4 * N:5 * N, :], sol.y[5 * N:6 * N, :],
   sol.y[6 * N:7 * N, :], sol.y[7 * N:8 * N, :], sol.y[8 * N:9 * N, :],
-  sol.y[9 * N:10 * N, :], sol.y[10 * N:11 * N, :], sol.y[11 * N:, :].reshape(N, N, sol.t.shape[0])
+  sol.y[9 * N:10 * N, :], sol.y[10 * N:, :].reshape(N, N, sol.t.shape[0])
 ]
 
 
@@ -535,7 +582,7 @@ plt.figure()
 plot_spike_train(spike_matrix)
 
 ##Subplots widget.
-n = 4
+n = 5
 plt.figure()
 plt.subplot(5, 1, 1)
 plt.plot(y[0][n, :])

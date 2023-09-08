@@ -29,10 +29,6 @@ def inhib_NMDA(k, nk):
 
   return f
 
-  
-  
-
-
 # function that returns dz/dt
 def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
   #Constant rates in min-1, from literature.

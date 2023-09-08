@@ -122,10 +122,20 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[2] = VDRR(y[1], NADPH, y[2], NADP) - inhibsyn5HTto5HT(y[11], gstar_5ht_basal) * VTPH(y[3], y[2]) 
   dy[3] = VTRPin(y[0]) - inhibsyn5HTto5HT(y[11], gstar_5ht_basal) * VTPH(y[3], y[2]) - VPOOL(y[3], y[10]) - a12 * y[3]
   dy[4] = inhibsyn5HTto5HT(y[11], gstar_5ht_basal) * VTPH(y[3], y[2]) - VAADC(y[4])
+
+  
   dy[5] = VAADC(y[4]) - VMAT(y[5], y[6]) - VMAT(y[5], y[7]) + VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - TCcatab(y[5]) - a15 * (y[5] - y[8])
+
+  
   dy[6] = VMAT(y[5], y[6]) - a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] + vht_trafficking(y[6], vht_basal)
+
+  
   dy[7] = VMAT(y[5], y[7]) - a15 * vht_trafficking(y[6], vht_basal)
+
+  
   dy[8] = a16 * fireht(t, inhibR5HTto5HT(y[11], gstar_5ht_basal) * inhibRHAto5HT(y[15], gstar_ha_basal)) * y[6] - VSERT(y[8], y[19], ssri, allo_ssri_ki(ssri)) - a11 * H1ht(y[8], eht_basal) * VUP2(y[8]) - a14 * y[8] + a8 * (y[5] - y[8]) + a9 * (y[14] - y[8]) 
+
+  
   dy[9] = TCcatab(y[5]) + TCcatab(y[14]) - a10 * y[9] 
   dy[10] = VPOOL(y[3], y[10]) - a13 * y[10]
   dy[11] = a2 * y[13]**2 * (g0 - y[11]) - a3 * y[12] * y[11]  
@@ -306,8 +316,6 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   d2 = 0.05 #ketamine -> norketamine in brain (h^-1). 
   d3 = 25 #ketamine -> norketamine in periphery (liver)  #(h^-1).
 
-
-  
   # Parameters.
   protein_binding_k = 0.60
   protein_binding_nk = 0.5

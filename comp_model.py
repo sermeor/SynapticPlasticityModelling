@@ -306,15 +306,22 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   # y[57] = Periphery concentration of norketamine in ug. 
   
   #Rates between compartments (h-1). 
-  k01k = 1.5625
-  k10k = 82.5
-  k12k = 28.5
-  k21k = 5.25
-  k13k = 100
-  k31k = 5
-  d1 = 162.5 #ketamine -> norketamine in blood (h^-1). 
+  k01 = 1.171875
+  k10 = 115.5
+  k12 = 21.375
+  k21 = 5.25
+  k13 = 100
+  k31 = 5
+
+  k10_nk = 41.25
+  k12_nk = 14.25
+  k21_nk = 3.9375
+  k13_nk = 80
+  k31_nk = 5
+	
+  d1 = 81.25 #ketamine -> norketamine in blood (h^-1). 
   d2 = 0.05 #ketamine -> norketamine in brain (h^-1). 
-  d3 = 25 #ketamine -> norketamine in periphery (liver)  #(h^-1).
+  d3 = 12.5 #ketamine -> norketamine in periphery (liver)  #(h^-1).
 
   # Parameters.
   protein_binding_k = 0.60
@@ -322,19 +329,20 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   protein_brain_binding_k = 0.15
   
   #Equations
-  dy[51] = inj(t,  ket_start_time, ket_repeat_time, ket_q_inj) - k01k*(y[51])
-  
-  dy[52] = k01k*(y[51]) - (k10k + k12k)*(y[52]*(1-protein_binding_k)) + k21k*(y[54]*(1-protein_brain_binding_k)) - k13k*(y[52]*(1-protein_binding_k)) + k31k*(y[56]) - d1 * y[52]
 
-  dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10k + k12k)*(y[53]*(1-protein_binding_nk)) - k21k*(y[55]*(1-protein_brain_binding_k)) - k13k*(y[53]*(1-protein_binding_nk)) + k31k*(y[57])
+  dy[51] = inj(t, ket_start_time, ket_repeat_time, ket_q_inj) - k01*(y[51])
   
-  dy[54] = k12k*(y[52]*(1-protein_binding_k)) - k21k*(y[54]*(1-protein_brain_binding_k)) - d2 * y[54]
+  dy[52] = k01*(y[51]) - (k10 + k12+ k13)*(y[52]*(1-protein_binding_k)) + k21*(y[54]*(1-protein_brain_binding)) + k31*(y[56]) - d1 * y[52]*(1-protein_binding_k)
 
-  dy[55] = d2 * y[54] + k12k*y[53]*(1-protein_binding_nk) - k21k*(y[55]*(1-protein_brain_binding_k))
+  dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[53]*(1-protein_binding_nk)) - k21_nk*(y[55]*(1-protein_brain_binding)) + k31_nk*(y[57])
   
-  dy[56] = k13k*(y[52]*(1-protein_binding_k)) - k31k*(y[56]) - d3 * y[56]
+  dy[54] = k12*(y[52]*(1-protein_binding_k)) - k21*(y[54]*(1-protein_brain_binding)) - d2 * y[54]
 
-  dy[57] = d3 * y[56] + k13k*(y[53]*(1-protein_binding_nk)) - k31k*(y[57])
+  dy[55] = d2 * y[54] + k12_nk*y[53]*(1-protein_binding_nk) - k21_nk*(y[55]*(1-protein_brain_binding))
+  
+  dy[56] = k13*(y[52]*(1-protein_binding_k)) - k31*(y[56]) - d3 * y[56]
+
+  dy[57] = d3 * y[56] + k13_nk*(y[53]*(1-protein_binding_nk)) - k31_nk*(y[57])
 
 
   return dy

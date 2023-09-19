@@ -50,7 +50,7 @@ FMH_bioavailability = 0.95
 fmh_molecular_weight = 187.17 # g/mol, or ug/umol.
 
 #Dose parameters for ketamine. 
-ket_dose_factor = 10                     # mg/kg of body weight. 
+ket_dose_factor = 30                     # mg/kg of body weight. 
 ket_start_time = 0*3600/t_factor           # Starting time of ketamine dose in same units as t_factor.
 ket_dose = (ket_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 ket_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
@@ -83,13 +83,10 @@ sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = t
 
 
 plt.figure(1)
-plt.plot(sol.y[55, :])
+plt.plot(sol.y[54, :])
 plt.xlabel('Time (h)')
 plt.ylabel('K (uM)')
 plt.show()
 
-plt.figure(2)
-plt.plot(inhib_NMDA(sol.y[54, :], sol.y[55, :]))
-plt.show()
 
 

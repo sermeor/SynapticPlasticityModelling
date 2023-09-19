@@ -33,22 +33,30 @@ def inhib_NMDA(k, nk):
 def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
   #Constant rates in min-1, from literature.
   
-  k01 = 1.5625
-  k10 = 82.5
-  k12 = 28.5
+  k01 = 0.75*1.5625
+  k10 = 1.4*82.5
+  k12 = 0.75*28.5
   k21 = 5.25
   k13 = 100
   k31 = 5
-  q1 = 162.5 #ketamine -> norketamine in blood (h^-1). 
+
+
+  k10_nk = 0.5*82.5
+  k12_nk = 0.5*28.5
+  k21_nk = 0.75*5.25
+  k13_nk = 0.8*100
+  k31_nk = 5
+	
+  q1 = 0.5*162.5 #ketamine -> norketamine in blood (h^-1). 
   q2 = 0.05 #ketamine -> norketamine in brain (h^-1). 
-  q3 = 25 #ketamine -> norketamine in periphery (liver)  #(h^-1).
+  q3 = 0.5*25 #ketamine -> norketamine in periphery (liver)  #(h^-1).
 
   # y[0] = Peritoneum concentration of ketamine in ug.
   # y[1] = Blood concentration of ketamine in ug.
   # y[2] = Blood concentration of norketamine in ug.
   # y[3] = Brain concentration of ketamine in ug.
   # y[4] = Brain concentration of norketamine in ug.
-  # y[5] = Periphery concentration of norketamine in ug.
+  # y[5] = Periphery concentration of ketamine in ug.
   # y[6] = Periphery concentration of norketamine in ug. 
 
   # Parameters.
@@ -60,17 +68,17 @@ def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
   #Equations
   dy[0] = ketamine_inj(t, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj) - k01*(y[0])
   
-  dy[1] = k01*(y[0]) - (k10 + k12)*(y[1]*(1-protein_binding_k)) + k21*(y[3]*(1-protein_brain_binding)) - k13*(y[1]*(1-protein_binding_k)) + k31*(y[5]) - q1 * y[1]
+  dy[1] = k01*(y[0]) - (k10 + k12+ k13)*(y[1]*(1-protein_binding_k)) + k21*(y[3]*(1-protein_brain_binding)) + k31*(y[5]) - q1 * y[1]*(1-protein_binding_k)
 
-  dy[2] = q1 * y[1] * (1-protein_binding_k) - (k10 + k12)*(y[2]*(1-protein_binding_nk)) - k21*(y[4]*(1-protein_brain_binding)) - k13*(y[2]*(1-protein_binding_nk)) + k31*(y[6])
+  dy[2] = q1 * y[1] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[2]*(1-protein_binding_nk)) - k21_nk*(y[4]*(1-protein_brain_binding)) + k31_nk*(y[6])
   
   dy[3] = k12*(y[1]*(1-protein_binding_k)) - k21*(y[3]*(1-protein_brain_binding)) - q2 * y[3]
 
-  dy[4] = q2 * y[3] + k12*y[2]*(1-protein_binding_nk) - k21*(y[4]*(1-protein_brain_binding))
+  dy[4] = q2 * y[3] + k12_nk*y[2]*(1-protein_binding_nk) - k21_nk*(y[4]*(1-protein_brain_binding))
   
   dy[5] = k13*(y[1]*(1-protein_binding_k)) - k31*(y[5]) - q3 * y[5]
 
-  dy[6] = q3 * y[5] + k13*(y[2]*(1-protein_binding_nk)) - k31*(y[6])
+  dy[6] = q3 * y[5] + k13_nk*(y[2]*(1-protein_binding_nk)) - k31_nk*(y[6])
   
   return dy
 
@@ -80,7 +88,7 @@ def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
 
 #Time array.
 t_factor = 3600 # Time factor for graphs.
-time = 1*3600/t_factor # Time of simulation depending on t_factor.
+time = 10*3600/t_factor # Time of simulation depending on t_factor.
 sampling_rate =10*t_factor #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
 h = time_array[3] - time_array[1] #Step size
@@ -104,7 +112,7 @@ v2 = brain_volume
 v3 = peripheral_volume
 
 #Dose parameters for ketamine. 
-ketamine_dose_factor = 10                     # mg/kg of body weight. 
+ketamine_dose_factor = 30                     # mg/kg of body weight. 
 ketamine_start_time = 0*3600/t_factor           # Starting time of ketamine dose in same units as t_factor.
 ketamine_dose = (ketamine_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 ketamine_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
@@ -127,26 +135,18 @@ sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = t
 plt.figure()
 plt.subplot(4,1,1)
 plt.plot(time_array, sol.y[0, :])
-plt.ylabel('C1 (ug)')
+plt.ylabel('C0 (ug)')
 plt.subplot(4,1,2)
 plt.plot(time_array, sol.y[1, :])
 plt.plot(time_array, sol.y[2, :])
-plt.ylabel('C2 (ug)')
+plt.ylabel('C1 (ug)')
 plt.subplot(4,1,3)
 plt.plot(time_array, sol.y[3, :])
 plt.plot(time_array, sol.y[4, :])
-plt.ylabel('C3 (ug)')
+plt.ylabel('C2 (ug)')
 plt.subplot(4,1,4)
 plt.plot(time_array, sol.y[5, :])
 plt.plot(time_array, sol.y[6, :])
-plt.ylabel('C4 (ug)')
+plt.ylabel('C3 (ug)')
 plt.xlabel('time (h)')
-plt.show()
-
-plt.figure()
-plt.subplot(2,1,1)
-plt.plot(time_array, sol.y[3, :])
-plt.plot(time_array, sol.y[4, :])
-plt.subplot(2,1,2)
-plt.plot(time_array, inhib_NMDA(sol.y[3, :], sol.y[4, :]))
 plt.show()

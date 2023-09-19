@@ -42,13 +42,13 @@ def beta_n(Vm):
 
 
 @njit
-def alpha_c(V):
-  return 0.01 * (V + 20.0) / (1.0 - np.exp(-(V + 20.0) / 2.5))
+def alpha_c(Vm):
+  return 0.01 * (Vm + 20.0) / (1.0 - np.exp(-(Vm + 20.0) / 2.5))
 
 
 @njit
-def beta_c(V):
-  return 0.125 * np.exp(-(V + 50.0) / 80.0)
+def beta_c(Vm):
+  return 0.125 * np.exp(-(Vm + 50.0) / 80.0)
 
 
 ## Function of sodium channel current (mA/cm^2).
@@ -110,7 +110,6 @@ def I_NMDA_Na(g_NMDA, Vm):
   Nao = 140  #mM
   V_lim = 100  #mV
   a1 = g_NMDA * c * P_NMDA * P_Na * MgB(Vm) * ((Vm / 1000 * F**2) / (R * T))
-
   a2 = (Nai - Nao * np.exp(-((Vm / 1000 * F) / (R * T)))) / (1 - np.exp(-((Vm / 1000 * F) / (R * T))))
 
   a2[Vm > V_lim] = Nai
@@ -156,7 +155,7 @@ def I_NMDA_Ca(g_NMDA, Vm):
   Cao = 2  #mM
   V_lim = 100  #mV
   a1 = g_NMDA * c * P_NMDA * P_Ca * MgB(Vm) * ((4 * Vm / 1000 * F**2) /(R * T))
-  a2 = Cai - Cao * np.exp(-((2 * Vm / 1000 * F) / (R * T))) / (1 - np.exp(-((2 * Vm / 1000 * F) / (R * T))))
+  a2 = (Cai - Cao * np.exp(-((2 * Vm / 1000 * F) / (R * T)))) / (1 - np.exp(-((2 * Vm / 1000 * F) / (R * T))))
 
   a2[Vm > V_lim] = Cai
   a2[Vm < -V_lim] = Cao
@@ -218,15 +217,18 @@ def spike_boolean(Vm):
 def connectivity_update(C, act, N, NE, w_plas):
   # Postsynaptic update.
   sigma = 0.5 #Equilibrium activity of the neuron.
-  w_ex = - 0.1 #Weight of rate of change of post-synaptic connectivity of the neuron on excitatory plates (- when act>sigma, + when act<sigma, compensation).
-  w_inh = 0.1 #Weight of rate of change of post-synaptic connectivity of the neuron on inhibitory plates (+ when act>sigma, - when act<sigma, compensation).
+  w_ex = - 0.00002 #Weight of rate of change of post-synaptic connectivity of the neuron on excitatory plates (- when act>sigma, + when act<sigma, compensation).
+  w_inh = 0.00001 #Weight of rate of change of post-synaptic connectivity of the neuron on inhibitory plates (+ when act>sigma, - when act<sigma, compensation).
   post_delta_C_row = (act - sigma)
+  ##TESTING
+  w_plas = 0
+  ##TESTING
   post_delta_C = np.empty((N, N), dtype=np.float32)
   post_delta_C[:NE] = post_delta_C_row * (w_ex + w_plas)
   post_delta_C[NE:] = post_delta_C_row * (w_inh + w_plas)
 
   # Presynaptic update.
-  w = 0.1 #Weight of rate of change of presynaptic connectivity of the neuron (+ when act>sigma, - when act<sigma).
+  w = 0.00001 #Weight of rate of change of presynaptic connectivity of the neuron (+ when act>sigma, - when act<sigma).
   pre_delta_C = np.empty((N, N), dtype=np.float32)
   for i in range(N):  #rows
     pre_delta_C[i, :] = w * (act[i] - sigma)
@@ -320,19 +322,17 @@ def inhib_NMDA(k, nk):
   n_nk = 1.2  #Hill number nor-ketamine.
   Ki_k = 2  #Ketamine concentration for half occupacy (uM)
   Ki_nk = 17  #Norketamine concentration for half occupacy (uM)
-  f = 1 / (1 + (Ki_k / k)**n_k) + 1 / (1 + (Ki_nk / nk)**n_nk)
+  if (k>0) and (nk>0):
+    f = 1 / (1 + (Ki_k / k)**n_k) + 1 / (1 + (Ki_nk / nk)**n_nk)
+  else:
+    f = 0
   return f
-
-
-
-
-
 
 
 ##Function of fraction CaMKII bound to Ca2+.
 #F: fraction of CaMKII subunits bound to Ca+ /CaM.
 @njit
-def CaMKII(Cai, Cai_eq): #MIGHT NEED CHANGING FOR SIGMOID
+def CaMKII(Cai, Cai_eq): 
   K_H1 = 2  # The Ca2 activation Hill constant of CaMKII in uM.
   b = K_H1 - Cai_eq #Value to set the function as 0.5 at Cai_eq.
   return ((Cai + b) / K_H1)**4 / (1 + (((Cai + b) / K_H1)**4))
@@ -381,18 +381,9 @@ def plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound):
   w_trkB_bound = 1 #Weight of trkB_bound
   w_p75NTR_bound = 2 #Weight of p75NTR_bound
   s = 10 #Slope of sigmoid.
-  w = 0.1 #Weight to convert to plasticity from sigmoid.
+  w = 0.00001 #Weight to convert to plasticity from sigmoid.
   plasticity_weights = w/(1 + np.exp(-s*(w_CaMKII_bound*CaMKII_bound + w_trkB_bound*trkB_bound - w_p75NTR_bound*p75NTR_bound))) - 0.5
   return plasticity_weights
-
-
-
-
-
-
-
-
-
 
 
 
@@ -428,13 +419,7 @@ def comp_model(t, y, N, NE):
   a14 = 0.001  #Rate of decrease of inhibitory w_slow(GABA B) from neurotransmitter presence (ms-1).
 
   a15 = 0.01  #Rate of increase of neuron activity from individual spike (ms-1).
-  a16 = 0.0001  #Rate of decrease of neuron activity if neuron does not spike (ms-1).
-  a17 = 1
-  a18 = 1
-
-
-
-
+  a16 = 0.00001  #Rate of decrease of neuron activity if neuron does not spike (ms-1).
 
 
   #Define Poisson input parameters
@@ -444,16 +429,29 @@ def comp_model(t, y, N, NE):
 
   I_noise_e = noise(w1, rate, N)  #Poisson excitatory input noise.
   I_noise_i = noise(w2, rate, N)  #Poisson inhibitory input noise.
+    
+     
+  #NMDA inhibition variables.  
+  ketamine = 0 #Ketamine concentration (nM).
+  norketamine = 0 #Norketamine concentration (nM).
+  NMDA_dependency = np.ones(N) #NMDA dependency of neurons.
+  NMDA_dependency[:NE] *= 0.1 #Lower NMDA dependency of excitatory neurons.
+  inh_NMDA = inhib_NMDA(ketamine, norketamine)*NMDA_dependency #Inhibition score of NMDA.
 
   #Conductances.
   g_AMPA = g_AMPA_calc(a1, y[10:], y[7], N, NE)  #Conductance factor of AMPA channels.
   g_GABA_A = g_GABA_A_calc(a2, y[10:], y[7], N, NE)  # Conductance factor of GABA A channels.
-  g_NMDA = g_NMDA_calc(a3, y[10:], y[8], N,  NE)  # Conductance factor of NMDA channels.
+  g_NMDA = g_NMDA_calc(a3, y[10:], y[8], N,  NE)*inh_NMDA  # Conductance factor of NMDA channels.
   g_GABA_B = g_GABA_B_calc(a4, y[10:], y[8], N, NE)  # Conductance factor of GABA B channels.
 
+  #PFC to DRN variables. 
+  #Input from PFC excitatory neurons to DRN neurons. 
+  c_pfc_drn = np.mean(y[9][:NE])
 
   #Synaptic plasticity variables.
-  eht = 60 # Serotonin concentration (nM)
+  #Variables to be replaced when in full model. 
+
+  eht = 60 # Serotonin concentration (nM).
   eht_eq = 60 #Serotonin concentration in equilibrium (nM)
   spike = spike_boolean(y[0])  #Discrete spikes.
   CaMKII_bound = CaMKII(y[5], Cai_eq)  #Bound Ca2+ to CaMKII protein (0 to 1).
@@ -464,6 +462,8 @@ def comp_model(t, y, N, NE):
   #Weights of plasticity processes (close to 1 when neuron is proactively forming connections,
   #0 when the neuron is slower in making connections).
   w_plas = plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound)
+
+
 
   #Initialize differential list.
   dy = np.zeros_like(y, dtype=np.float32)
@@ -479,7 +479,6 @@ def comp_model(t, y, N, NE):
   #y[7] = w_fast, synaptic weights of activation of fast receptors (AMPA, GABA A).
   #y[8] = w_slow, synaptic weights of activation of slow receptors (NMDA, GABA B).
   #y[9] = Activity state of neuron (low/high state).
-  #y[10] = Ratio BDNF to proBDNF.
   #y[10:] = Connectivity matrix.
 
   #Differential equations.
@@ -493,7 +492,6 @@ def comp_model(t, y, N, NE):
   dy[7] = w_fast_update(a7, a8, a9, a10, y[6], y[7], N, NE)
   dy[8] = w_slow_update(a11, a12, a13, a14, y[6], y[8], N, NE)
   dy[9] = a15 * spike * (1 - y[9]) - a16 * y[9]
-
   dy[10:] = connectivity_update(y[10:], y[9], N, NE, w_plas)
 
   #flatten dy
@@ -511,7 +509,7 @@ np.random.seed(random_seed)  #Set seed in non-compiled code.
 
 #Time array.
 t_factor = 1  # Time factor for graphs.
-time = 60*1000 / t_factor  # Time of simulation depending on t_factor.
+time = 1*60*60*1000 / t_factor  # Time of simulation depending on t_factor.
 sampling_rate = 1 * t_factor  #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1), dtype=np.float32)
 
@@ -532,13 +530,22 @@ C = np.random.rand(N, N).flatten()  #Connectivity matrix.
 y0 = np.concatenate((Vm, m, h, n, c, Ca_0, N_0, g_fast_0, g_slow_0, act, C), axis=0)  #Flatten initial conditions.
 arguments = (N, NE)  #Constant arguments.
 
-#Get solution of the differential equation.
 
-sample_span = len(time_array) - 1  #n samples to solve each step
-n_iterations = 1  #int(np.ceil(len(time_array)/sample_span)-1) #number of iterations to complete time_array.
+#Get solution of the differential equation and store it.
+sample_span = 60*1000  #n samples to solve each step
+n_iterations = int(np.ceil(len(time_array)/sample_span)-1) #number of iterations to complete time_array.
+i_initial = 55
+
+if i_initial != 0:
+  data_last =  np.load('data_iteration_'+str(i_initial-1)+'.npy')
+  C_last = np.load('C_interation_'+str(i_initial-1)+'.npy')
+
+  y0[:10*N] = data_last[:, -1]
+  y0[10*N:] = C_last
+
 ##Solve in chunks.
-for i in range(0, n_iterations):
-  if i != 0:
+for i in range(i_initial, n_iterations):
+  if i != i_initial:
     y0 = sol.y[:, -1].copy()  #Last solution are initial values.
   #Get new solution.
   sol = solve_ivp(comp_model,
@@ -548,10 +555,13 @@ for i in range(0, n_iterations):
                   method='RK45',
                   args=arguments)
   #Save to txt.
-  #np.savetxt('data_iteration_'+str(i)+'.csv', sol.y, delimiter=',')
-  #np.save('data_iteration_'+str(i)+'.npy', sol.y)
+  np.savetxt('data_iteration_'+str(i)+'.csv', sol.y[:10*N], delimiter=',', fmt = "%.2f")
+  np.savetxt('C_interation_'+str(i)+'.csv', sol.y[10*N:, 0], delimiter=',', fmt = "%.2f")
+  np.save('data_iteration_'+str(i)+'.npy', sol.y[:10*N])
+  np.save('C_interation_'+str(i)+'.npy', sol.y[10*N:, 0])
 
-#Get results
+
+	#Get results
 y = [sol.y[:N, :], sol.y[N:2 * N, :], sol.y[2 * N:3 * N, :],
 sol.y[3 * N:4 * N, :], sol.y[4 * N:5 * N, :], sol.y[5 * N:6 * N, :],
   sol.y[6 * N:7 * N, :], sol.y[7 * N:8 * N, :], sol.y[8 * N:9 * N, :],

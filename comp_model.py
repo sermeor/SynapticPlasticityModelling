@@ -45,6 +45,47 @@ from Fcns.VTRPin import *
 from Fcns.VUP2 import *
 from Fcns.inhib_NMDA import *
 
+from Fcns.alpha_m import *
+from Fcns.beta_m import *
+from Fcns.alpha_h import *
+from Fcns.beta_h import *
+from Fcns.alpha_n import *
+from Fcns.beta_n import *
+from Fcns.alpha_c import *
+from Fcns.beta_c import *
+from Fcns.I_Na import *
+from Fcns.I_K import *
+from Fcns.I_VGCC import *
+from Fcns.I_L import *
+from Fcns.I_AMPA import *
+from Fcns.MgB import *
+from Fcns.I_NMDA_Na import *
+from Fcns.I_NMDA_K import *
+from Fcns.I_NMDA_Ca import *
+from Fcns.I_NMDA import *
+from Fcns.inward_Ca import *
+from Fcns.outward_Ca import *
+from Fcns.I_GABA_A import *
+from Fcns.I_GABA_B import *
+from Fcns.spike_boolean import *
+from Fcns.connectivity_update import *
+from Fcns.g_AMPA_calc import *
+from Fcns.g_GABA_A_calc import *
+from Fcns.g_GABA_B_calc import *
+from Fcns.g_NMDA_calc import *
+from Fcns.w_fast_update import *
+from Fcns.w_slow_update import *
+from Fcns.noise import *
+from Fcns.flatten_y import *
+from Fcns.flatten_dy import *
+from Fcns.set_seed import *
+from Fcns.inhib_NMDA import *
+from Fcns.CaMKII import *
+from Fcns.TrkB import *
+from Fcns.p75_NTR import *
+from Fcns.bdnf_calc import *
+from Fcns.bAP import *
+from Fcns.plasticity_weights_calc import *
 
 def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_q_inj, 
   fmh_molecular_weight, FMH_start_time, FMH_repeat_time, FMH_q_inj, ket_start_time, ket_repeat_time, ket_q_inj, mc_switch, 
@@ -329,21 +370,34 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   protein_brain_binding_k = 0.15
   
   #Equations
-
   dy[51] = inj(t, ket_start_time, ket_repeat_time, ket_q_inj) - k01*(y[51])
-  
   dy[52] = k01*(y[51]) - (k10 + k12+ k13)*(y[52]*(1-protein_binding_k)) + k21*(y[54]*(1-protein_brain_binding)) + k31*(y[56]) - d1 * y[52]*(1-protein_binding_k)
-
   dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[53]*(1-protein_binding_nk)) + k21_nk*(y[55]*(1-protein_brain_binding)) + k31_nk*(y[57])
-  
   dy[54] = k12*(y[52]*(1-protein_binding_k)) - k21*(y[54]*(1-protein_brain_binding)) - d2 * y[54]*(1-protein_brain_binding)
-
   dy[55] = d2 * y[54]*(1-protein_brain_binding) + k12_nk*y[53]*(1-protein_binding_nk) - k21_nk*(y[55]*(1-protein_brain_binding))
-  
   dy[56] = k13*(y[52]*(1-protein_binding_k)) - k31*(y[56]) - d3 * y[56]
-
   dy[57] = d3 * y[56] + k13_nk*(y[53]*(1-protein_binding_nk)) - k31_nk*(y[57])
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
   return dy
 

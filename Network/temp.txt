@@ -1,7 +1,0 @@
-  #TEMP
-  bdnf = 0  #Levels of extracellular BDNF.
-  spike = spike_boolean(y[0])  #Discrete spikes.
-  CaMKII_bound = CaMKII(y[5])  #Bound Ca2+ to CaMKII protein.
-  trkB_bound = TrkB(y[10])  #Bound BDNF to trkB.
-  p75NTR_bound = p75_NTR(y[10], pro_bdnf)  #Bound proBDNF and BDNF to p75NTR.
-  bAP_events = bAP(y[0], y[9])  #Backpropagating potential events.

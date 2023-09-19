@@ -334,11 +334,11 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   
   dy[52] = k01*(y[51]) - (k10 + k12+ k13)*(y[52]*(1-protein_binding_k)) + k21*(y[54]*(1-protein_brain_binding)) + k31*(y[56]) - d1 * y[52]*(1-protein_binding_k)
 
-  dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[53]*(1-protein_binding_nk)) - k21_nk*(y[55]*(1-protein_brain_binding)) + k31_nk*(y[57])
+  dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[53]*(1-protein_binding_nk)) + k21_nk*(y[55]*(1-protein_brain_binding)) + k31_nk*(y[57])
   
-  dy[54] = k12*(y[52]*(1-protein_binding_k)) - k21*(y[54]*(1-protein_brain_binding)) - d2 * y[54]
+  dy[54] = k12*(y[52]*(1-protein_binding_k)) - k21*(y[54]*(1-protein_brain_binding)) - d2 * y[54]*(1-protein_brain_binding)
 
-  dy[55] = d2 * y[54] + k12_nk*y[53]*(1-protein_binding_nk) - k21_nk*(y[55]*(1-protein_brain_binding))
+  dy[55] = d2 * y[54]*(1-protein_brain_binding) + k12_nk*y[53]*(1-protein_binding_nk) - k21_nk*(y[55]*(1-protein_brain_binding))
   
   dy[56] = k13*(y[52]*(1-protein_binding_k)) - k31*(y[56]) - d3 * y[56]
 

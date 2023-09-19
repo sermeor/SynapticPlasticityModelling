@@ -70,11 +70,11 @@ def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
   
   dy[1] = k01*(y[0]) - (k10 + k12+ k13)*(y[1]*(1-protein_binding_k)) + k21*(y[3]*(1-protein_brain_binding)) + k31*(y[5]) - q1 * y[1]*(1-protein_binding_k)
 
-  dy[2] = q1 * y[1] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[2]*(1-protein_binding_nk)) - k21_nk*(y[4]*(1-protein_brain_binding)) + k31_nk*(y[6])
+  dy[2] = q1 * y[1] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[2]*(1-protein_binding_nk)) + k21_nk*(y[4]*(1-protein_brain_binding)) + k31_nk*(y[6])
   
-  dy[3] = k12*(y[1]*(1-protein_binding_k)) - k21*(y[3]*(1-protein_brain_binding)) - q2 * y[3]
+  dy[3] = k12*(y[1]*(1-protein_binding_k)) - k21*(y[3]*(1-protein_brain_binding)) - q2 * y[3]*(1-protein_brain_binding)
 
-  dy[4] = q2 * y[3] + k12_nk*y[2]*(1-protein_binding_nk) - k21_nk*(y[4]*(1-protein_brain_binding))
+  dy[4] = q2 * y[3]*(1-protein_brain_binding) + k12_nk*y[2]*(1-protein_binding_nk) - k21_nk*(y[4]*(1-protein_brain_binding))
   
   dy[5] = k13*(y[1]*(1-protein_binding_k)) - k31*(y[5]) - q3 * y[5]
 

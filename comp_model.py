@@ -379,7 +379,9 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   dy[57] = d3 * y[56] + k13_nk*(y[53]*(1-protein_binding_nk)) - k31_nk*(y[57])
 
 
+## Synaptic plasticity model
 
+	
 
 
 

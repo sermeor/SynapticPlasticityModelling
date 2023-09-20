@@ -347,12 +347,12 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   # y[57] = Periphery concentration of norketamine in ug. 
   
   #Rates between compartments (h-1). 
-  k01 = 1.171875
-  k10 = 115.5
-  k12 = 21.375
-  k21 = 5.25
-  k13 = 100
-  k31 = 5
+  k01_k = 1.171875
+  k10_k = 115.5
+  k12_k = 21.375
+  k21_k = 5.25
+  k13_k = 100
+  k31_k = 5
 
   k10_nk = 41.25
   k12_nk = 14.25
@@ -370,12 +370,12 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
   protein_brain_binding_k = 0.15
   
   #Equations
-  dy[51] = inj(t, ket_start_time, ket_repeat_time, ket_q_inj) - k01*(y[51])
-  dy[52] = k01*(y[51]) - (k10 + k12+ k13)*(y[52]*(1-protein_binding_k)) + k21*(y[54]*(1-protein_brain_binding)) + k31*(y[56]) - d1 * y[52]*(1-protein_binding_k)
+  dy[51] = inj(t, ket_start_time, ket_repeat_time, ket_q_inj) - k01_k*(y[51])
+  dy[52] = k01_k*(y[51]) - (k10_k + k12_k + k13_k)*(y[52]*(1-protein_binding_k)) + k21_k*(y[54]*(1-protein_brain_binding)) + k31_k*(y[56]) - d1 * y[52]*(1-protein_binding_k)
   dy[53] = d1 * y[52] * (1-protein_binding_k) - (k10_nk + k12_nk + k13_nk)*(y[53]*(1-protein_binding_nk)) + k21_nk*(y[55]*(1-protein_brain_binding)) + k31_nk*(y[57])
-  dy[54] = k12*(y[52]*(1-protein_binding_k)) - k21*(y[54]*(1-protein_brain_binding)) - d2 * y[54]*(1-protein_brain_binding)
+  dy[54] = k12_k*(y[52]*(1-protein_binding_k)) - k21_k*(y[54]*(1-protein_brain_binding)) - d2 * y[54]*(1-protein_brain_binding)
   dy[55] = d2 * y[54]*(1-protein_brain_binding) + k12_nk*y[53]*(1-protein_binding_nk) - k21_nk*(y[55]*(1-protein_brain_binding))
-  dy[56] = k13*(y[52]*(1-protein_binding_k)) - k31*(y[56]) - d3 * y[56]
+  dy[56] = k13_k*(y[52]*(1-protein_binding_k)) - k31_k*(y[56]) - d3 * y[56]
   dy[57] = d3 * y[56] + k13_nk*(y[53]*(1-protein_binding_nk)) - k31_nk*(y[57])
 
 

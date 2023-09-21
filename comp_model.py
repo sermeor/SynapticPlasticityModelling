@@ -426,11 +426,6 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
 	
 	
 	#NMDA inhibition variables.  
-
-
-
-	
-	
 	ketamine = (y[54]/v2)*1000/(ket_molecular_weight) #Ketamine concentration (uM).
 	norketamine = (y[55]/v2)*1000/(norket_molecular_weight) #Norketamine concentration (uM).
 	NMDA_dependency = np.ones(N) #NMDA dependency of neurons.

@@ -243,8 +243,6 @@ def connectivity_update(C, act, N, NE, w_plas):
 
   return delta_C
 
-
-
 #Function that calculates g_AMPA, from AMPA input weights and connectivity weights.
 @njit
 def g_AMPA_calc(a1, C, w, N, NE):

@@ -1,5 +1,7 @@
 import numpy as np
 from numba import njit, jit
+from Fcns.I_NMDA_Ca import *
+from Fcns.I_VGCC import *
 ##Function of inward calcium rate (uM/ms).
 @njit
 def inward_Ca(g_NMDA, Vm, c):

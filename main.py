@@ -10,9 +10,11 @@ from comp_model import *
 #find the ks that give the diff eq to 0
 
 #Time array (always in hours).
-t_factor = 3600 # Time factor for graphs (1h -> 3600s).
-time = (1/60)*(1/60)*3600/t_factor # Time of simulation depending on t_factor.
-sampling_rate = 10*t_factor #number of samples per time factor units.
+#t_factor = 3600 # Time factor for graphs (1h -> 3600s).
+#time = (100/3600000)*3600/t_factor # Time of simulation depending on t_factor.
+#sampling_rate = 1*t_factor #number of samples per time factor units.
+time = (100/3600000) #in h
+sampling_rate = 1*3600000 #in h-1
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
 
 
@@ -32,7 +34,7 @@ v2 = brain_volume
 v3 = peripheral_volume
 
 #Dose parameters for escitalopram. 
-SSRI_dose_factor = 10                     # mg/kg of body weight. 
+SSRI_dose_factor = 0                     # mg/kg of body weight. 
 SSRI_start_time = 0*3600/t_factor           # Starting time of SSRI dose in same units as t_factor.
 SSRI_dose = (SSRI_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 SSRI_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
@@ -52,7 +54,7 @@ FMH_bioavailability = 0.95
 fmh_molecular_weight = 187.17 # g/mol, or ug/umol.
 
 #Dose parameters for ketamine. 
-ket_dose_factor = 30                     # mg/kg of body weight. 
+ket_dose_factor = 0                     # mg/kg of body weight. 
 ket_start_time = 0*3600/t_factor           # Starting time of ketamine dose in same units as t_factor.
 ket_dose = (ket_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
 ket_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
@@ -115,13 +117,13 @@ arguments = (v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_time, SSRI_
  
 #Get solution of the differential equation.
 
-sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = time_array, y0 = y0, method = 'DOP853', args = arguments)
+sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = time_array, y0 = y0, method = 'RK45', args = arguments)
 
 
 plt.figure(1)
-plt.plot(sol.y[54, :])
+plt.plot(sol.y[59, :])
 plt.xlabel('Time (h)')
-plt.ylabel('K (uM)')
+plt.ylabel('Vm')
 plt.show()
 
 

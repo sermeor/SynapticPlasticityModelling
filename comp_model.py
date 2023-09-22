@@ -435,7 +435,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
 	#Conductances.
 	g_AMPA = g_AMPA_calc(e1, ynn[10:], ynn[7], N, NE)  #Conductance factor of AMPA channels.
 	g_GABA_A = g_GABA_A_calc(e2, ynn[10:], ynn[7], N, NE)  # Conductance factor of GABA A channels.
-	g_NMDA = g_NMDA_calc(e3, ynn[10:], ynn[8], N,  NE)*inh_NMDA  # Conductance factor of NMDA channels.
+	g_NMDA = g_NMDA_calc(e3, ynn[10:], ynn[8], N,  NE)*(1 - inh_NMDA)  # Conductance factor of NMDA channels.
 	g_GABA_B = g_GABA_B_calc(e4, ynn[10:], ynn[8], N, NE)  # Conductance factor of GABA B channels.
 
 	

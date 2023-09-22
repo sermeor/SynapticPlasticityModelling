@@ -10,10 +10,10 @@ from comp_model import *
 #find the ks that give the diff eq to 0
 
 #Time array (always in hours).
-#t_factor = 3600 # Time factor for graphs (1h -> 3600s).
+t_factor = 3600 # Time factor for graphs (1h -> 3600s).
 #time = (100/3600000)*3600/t_factor # Time of simulation depending on t_factor.
 #sampling_rate = 1*t_factor #number of samples per time factor units.
-time = (100/3600000) #in h
+time = (10000/3600000) #in h
 sampling_rate = 1*3600000 #in h-1
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
 

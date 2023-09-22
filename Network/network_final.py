@@ -1,3 +1,4 @@
+%%time 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -42,13 +43,13 @@ def beta_n(Vm):
 
 
 @njit
-def alpha_c(Vm):
-  return 0.01 * (Vm + 20.0) / (1.0 - np.exp(-(Vm + 20.0) / 2.5))
+def alpha_c(V):
+  return 0.01 * (V + 20.0) / (1.0 - np.exp(-(V + 20.0) / 2.5))
 
 
 @njit
-def beta_c(Vm):
-  return 0.125 * np.exp(-(Vm + 50.0) / 80.0)
+def beta_c(V):
+  return 0.125 * np.exp(-(V + 50.0) / 80.0)
 
 
 ## Function of sodium channel current (mA/cm^2).
@@ -219,10 +220,8 @@ def connectivity_update(C, act, N, NE, w_plas):
   sigma = 0.5 #Equilibrium activity of the neuron.
   w_ex = - 0.00002 #Weight of rate of change of post-synaptic connectivity of the neuron on excitatory plates (- when act>sigma, + when act<sigma, compensation).
   w_inh = 0.00001 #Weight of rate of change of post-synaptic connectivity of the neuron on inhibitory plates (+ when act>sigma, - when act<sigma, compensation).
+      
   post_delta_C_row = (act - sigma)
-  ##TESTING
-  w_plas = 0
-  ##TESTING
   post_delta_C = np.empty((N, N), dtype=np.float32)
   post_delta_C[:NE] = post_delta_C_row * (w_ex + w_plas)
   post_delta_C[NE:] = post_delta_C_row * (w_inh + w_plas)
@@ -242,6 +241,8 @@ def connectivity_update(C, act, N, NE, w_plas):
   delta_C = np.where(invalid_indices, 0, delta_C)
 
   return delta_C
+
+
 
 #Function that calculates g_AMPA, from AMPA input weights and connectivity weights.
 @njit
@@ -321,7 +322,7 @@ def inhib_NMDA(k, nk):
   Ki_k = 2  #Ketamine concentration for half occupacy (uM)
   Ki_nk = 17  #Norketamine concentration for half occupacy (uM)
   if (k>0) and (nk>0):
-    f = 1 / (1 + (Ki_k / k)**n_k) + 1 / (1 + (Ki_nk / nk)**n_nk)
+    f = (1 / (1 + (Ki_k / k)**n_k)) * (1 / (1 + (Ki_nk / nk)**n_nk))
   else:
     f = 0
   return f
@@ -330,7 +331,7 @@ def inhib_NMDA(k, nk):
 ##Function of fraction CaMKII bound to Ca2+.
 #F: fraction of CaMKII subunits bound to Ca+ /CaM.
 @njit
-def CaMKII(Cai, Cai_eq): 
+def CaMKII(Cai, Cai_eq): #MIGHT NEED CHANGING FOR SIGMOID
   K_H1 = 2  # The Ca2 activation Hill constant of CaMKII in uM.
   b = K_H1 - Cai_eq #Value to set the function as 0.5 at Cai_eq.
   return ((Cai + b) / K_H1)**4 / (1 + (((Cai + b) / K_H1)**4))
@@ -349,7 +350,7 @@ def p75_NTR(bdnf, pro_bdnf):
   w_pro_bdnf = 0.9 #Factor of pro_bdnf.
   w_bdnf = 1 -  w_pro_bdnf #Factor of bdnf.
   s = 10 #Slope of sigmoid.
-  return 1 / (1 + np.exp(-s*(w_bdnf * pro_bdnf + w_pro_bdnf * bdnf - 0.5)))
+  return 1 / (1 + np.exp(-s*(w_pro_bdnf * pro_bdnf + w_bdnf * bdnf - 0.5)))
 
 ##Function of BDNF presence dependent on neuronal factors (sigmoid).
 @njit
@@ -378,9 +379,9 @@ def plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound):
   w_CaMKII_bound = 1 #Weight of CaMKII_bound
   w_trkB_bound = 1 #Weight of trkB_bound
   w_p75NTR_bound = 2 #Weight of p75NTR_bound
-  s = 10 #Slope of sigmoid.
+  s = 1 #Slope of sigmoid.
   w = 0.00001 #Weight to convert to plasticity from sigmoid.
-  plasticity_weights = w/(1 + np.exp(-s*(w_CaMKII_bound*CaMKII_bound + w_trkB_bound*trkB_bound - w_p75NTR_bound*p75NTR_bound))) - 0.5
+  plasticity_weights = w/(1 + np.exp(-s*(w_CaMKII_bound*CaMKII_bound + w_trkB_bound*trkB_bound - w_p75NTR_bound*p75NTR_bound))) - w/2
   return plasticity_weights
 
 
@@ -439,7 +440,7 @@ def comp_model(t, y, N, NE):
   #Conductances.
   g_AMPA = g_AMPA_calc(a1, y[10:], y[7], N, NE)  #Conductance factor of AMPA channels.
   g_GABA_A = g_GABA_A_calc(a2, y[10:], y[7], N, NE)  # Conductance factor of GABA A channels.
-  g_NMDA = g_NMDA_calc(a3, y[10:], y[8], N,  NE)*inh_NMDA  # Conductance factor of NMDA channels.
+  g_NMDA = g_NMDA_calc(a3, y[10:], y[8], N,  NE)*(1 - inh_NMDA)  # Conductance factor of NMDA channels.
   g_GABA_B = g_GABA_B_calc(a4, y[10:], y[8], N, NE)  # Conductance factor of GABA B channels.
 
   #PFC to DRN variables. 
@@ -460,8 +461,6 @@ def comp_model(t, y, N, NE):
   #Weights of plasticity processes (close to 1 when neuron is proactively forming connections,
   #0 when the neuron is slower in making connections).
   w_plas = plasticity_weights_calc(CaMKII_bound, trkB_bound, p75NTR_bound)
-
-
 
   #Initialize differential list.
   dy = np.zeros_like(y, dtype=np.float32)
@@ -507,36 +506,35 @@ np.random.seed(random_seed)  #Set seed in non-compiled code.
 
 #Time array.
 t_factor = 1  # Time factor for graphs.
-time = 1*60*60*1000 / t_factor  # Time of simulation depending on t_factor.
+time = 120*60*1000 / t_factor  # Time of simulation depending on t_factor.
 sampling_rate = 1 * t_factor  #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1), dtype=np.float32)
 
 #Initial conditions with their original shapes.
-Vm = -60 * np.ones(N)  #Membrane potential.
-m = 0.05 * np.ones(N)  #Activation gating variable for the voltage-gated sodium (Na+) channels.
-h = 0.6 * np.ones(N)  #Activation gating variable for the voltage-gated potassium (K+) channels.
-n = 0.32 * np.ones(N)  #Inactivation gating variable for the Na+ channels.
-c = 0 * np.ones(N)  #Gatting variable for VGCC.
-Ca_0 = 0.1 * np.ones(N)  #Internal calcium.
-N_0 = np.zeros(N)  #Neurotransmitter.
-g_fast_0 = np.zeros(N)  #Fast conductances.
-g_slow_0 = np.zeros(N)  #Membrane potential. #Slow conductances.
-act = 0.5 * np.ones(N)  #Activity state.
+Vm = -60 * np.ones(N, dtype = np.float32)  #Membrane potential.
+m = 0.05 * np.ones(N, dtype = np.float32)  #Activation gating variable for the voltage-gated sodium (Na+) channels.
+h = 0.6 * np.ones(N, dtype = np.float32)  #Activation gating variable for the voltage-gated potassium (K+) channels.
+n = 0.32 * np.ones(N, dtype = np.float32)  #Inactivation gating variable for the Na+ channels.
+c = 0 * np.ones(N, dtype = np.float32)  #Gatting variable for VGCC.
+Ca_0 = 0.1 * np.ones(N, dtype = np.float32)  #Internal calcium.
+N_0 = np.zeros(N, dtype = np.float32)  #Neurotransmitter.
+g_fast_0 = np.zeros(N, dtype = np.float32)  #Fast conductances.
+g_slow_0 = np.zeros(N, dtype = np.float32)  #Membrane potential. #Slow conductances.
+act = 0.5 * np.ones(N, dtype = np.float32)  #Activity state.
 
-C = np.random.rand(N, N).flatten()  #Connectivity matrix.
+C = np.random.rand(N, N).flatten().astype(np.float32)  #Connectivity matrix.
 
 y0 = np.concatenate((Vm, m, h, n, c, Ca_0, N_0, g_fast_0, g_slow_0, act, C), axis=0)  #Flatten initial conditions.
 arguments = (N, NE)  #Constant arguments.
 
-
 #Get solution of the differential equation and store it.
 sample_span = 60*1000  #n samples to solve each step
 n_iterations = int(np.ceil(len(time_array)/sample_span)-1) #number of iterations to complete time_array.
-i_initial = 55
+i_initial = 43
 
 if i_initial != 0:
-  data_last =  np.load('data_iteration_'+str(i_initial-1)+'.npy')
-  C_last = np.load('C_interation_'+str(i_initial-1)+'.npy')
+  data_last =  np.load('data_iteration_'+str(i_initial-1)+'.npz')['arr_0']
+  C_last = np.load('C_interation_'+str(i_initial-1)+'.npz')['arr_0']
 
   y0[:10*N] = data_last[:, -1]
   y0[10*N:] = C_last
@@ -554,12 +552,13 @@ for i in range(i_initial, n_iterations):
                   args=arguments)
   #Save to txt.
   np.savetxt('data_iteration_'+str(i)+'.csv', sol.y[:10*N], delimiter=',', fmt = "%.2f")
+  np.savez_compressed('data_iteration_'+str(i)+'.npz', sol.y[:10*N].astype(np.float16))
   np.savetxt('C_interation_'+str(i)+'.csv', sol.y[10*N:, 0], delimiter=',', fmt = "%.2f")
-  np.save('data_iteration_'+str(i)+'.npy', sol.y[:10*N])
-  np.save('C_interation_'+str(i)+'.npy', sol.y[10*N:, 0])
+  np.savez_compressed('C_interation_'+str(i)+'.npz', sol.y[10*N:, 0].astype(np.float16))
 
 
-	#Get results
+
+#Get results
 y = [sol.y[:N, :], sol.y[N:2 * N, :], sol.y[2 * N:3 * N, :],
 sol.y[3 * N:4 * N, :], sol.y[4 * N:5 * N, :], sol.y[5 * N:6 * N, :],
   sol.y[6 * N:7 * N, :], sol.y[7 * N:8 * N, :], sol.y[8 * N:9 * N, :],

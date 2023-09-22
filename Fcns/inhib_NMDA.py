@@ -9,7 +9,7 @@ def inhib_NMDA(k, nk):
 	Ki_k = 2 #Ketamine concentration for half occupacy (uM)
 	Ki_nk = 17 #Norketamine concentration for half occupacy (uM)
 	if (k>0) and (nk>0):
-		f = 1 / (1 + (Ki_k / k)**n_k) + 1 / (1 + (Ki_nk / nk)**n_nk)
+		f = (1 / (1 + (Ki_k / k)**n_k)) * (1 / (1 + (Ki_nk / nk)**n_nk))
 	else:
 		f = 0
 	return f

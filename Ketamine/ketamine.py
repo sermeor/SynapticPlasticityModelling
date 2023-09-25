@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import math 
@@ -88,10 +89,10 @@ def comp_model(t, y, ketamine_start_time, ketamine_repeat_time, ketamine_q_inj):
 
 #Time array.
 t_factor = 3600 # Time factor for graphs.
-time = 10*3600/t_factor # Time of simulation depending on t_factor.
-sampling_rate =10*t_factor #number of samples per time factor units.
+time = 25*3600/t_factor # Time of simulation depending on t_factor.
+sampling_rate =1*t_factor #number of samples per time factor units.
 time_array = np.linspace(0, time, math.floor(time * sampling_rate + 1))
-h = time_array[3] - time_array[1] #Step size
+h = time_array[2] - time_array[1] #Step size
 
 
 
@@ -112,14 +113,15 @@ v2 = brain_volume
 v3 = peripheral_volume
 
 #Dose parameters for ketamine. 
-ketamine_dose_factor = 30                     # mg/kg of body weight. 
+ketamine_dose_factor = 10                     # mg/kg of body weight. 
 ketamine_start_time = 0*3600/t_factor           # Starting time of ketamine dose in same units as t_factor.
 ketamine_dose = (ketamine_dose_factor*1e6)*(weight/1000) * 0.001 # In ug. 
-ketamine_repeat_time = 8*3600/t_factor #Time for repeat of dose. 
+ketamine_repeat_time = 80*3600/t_factor #Time for repeat of dose. 
 ketamine_bioavailability = 0.8
 
 #Molecular weight of escitalopram.
 ketamine_molecular_weight = 237.725 #g/mol, or ug/umol.
+norket_molecular_weight = 260.16 #g/mol, or ug/umol.
 
 
 
@@ -131,6 +133,8 @@ arguments = (ketamine_start_time, ketamine_repeat_time, ketamine_dose*ketamine_b
 #Get solution of the differential equation.
 
 sol = solve_ivp(comp_model, t_span = (time_array[0], time_array[-1]), t_eval = time_array, y0 = y0, method = 'RK45', args = arguments)
+
+
 
 plt.figure()
 plt.subplot(4,1,1)

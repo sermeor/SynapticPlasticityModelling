@@ -45,7 +45,6 @@ from Fcns.VTPH import *
 from Fcns.VTRPin import *
 from Fcns.VUP2 import *
 from Fcns.inhib_NMDA import *
-
 from Fcns.alpha_m import *
 from Fcns.beta_m import *
 from Fcns.alpha_h import *
@@ -435,7 +434,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
 	#Conductances.
 	g_AMPA = g_AMPA_calc(e1, ynn[10:], ynn[7], N, NE)  #Conductance factor of AMPA channels.
 	g_GABA_A = g_GABA_A_calc(e2, ynn[10:], ynn[7], N, NE)  # Conductance factor of GABA A channels.
-	g_NMDA = g_NMDA_calc(e3, ynn[10:], ynn[8], N,  NE)*(1 - inh_NMDA)  # Conductance factor of NMDA channels.
+	g_NMDA = g_NMDA_calc(e3, ynn[10:], ynn[8], N,  NE)*(1 - inh_NMDA)*0  # Conductance factor of NMDA channels.
 	g_GABA_B = g_GABA_B_calc(e4, ynn[10:], ynn[8], N, NE)  # Conductance factor of GABA B channels.
 
 	
@@ -443,7 +442,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
 	#Variables to be replaced when in full model. 
 	
 	eht = y[8] # Extracellular serotonin concentration (nM).
-	eht_eq = 60 #Serotonin concentration in equilibrium (nM)
+	eht_eq = 60 #Serotonin concentration in equilibrium (nM).
 	spike = spike_boolean(ynn[0])  #Discrete spikes.
 	CaMKII_bound = CaMKII(ynn[5], Cai_eq)  #Bound Ca2+ to CaMKII protein (0 to 1).
 	bAP_events = bAP(ynn[0], ynn[9])  #Backpropagating potential events.

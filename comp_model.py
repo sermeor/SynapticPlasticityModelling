@@ -429,7 +429,7 @@ def comp_model(t, y, v2, ssri_molecular_weight, SSRI_start_time, SSRI_repeat_tim
 	norketamine = (y[55]/v2)*1000/(norket_molecular_weight) #Norketamine concentration (uM).
 	NMDA_dependency = np.ones(N) #NMDA dependency of neurons.
 	NMDA_dependency[:NE] *= 0.1 #Lower NMDA dependency of excitatory neurons.
-	inh_NMDA = inhib_NMDA(ketamine, norketamine)*NMDA_dependency #Inhibition score of NMDA.
+	inh_NMDA = inhib_NMDA(ketamine, norketamine, NMDA_dependency) #Inhibition score of NMDA.
 	
 	#Conductances.
 	g_AMPA = g_AMPA_calc(e1, ynn[10:], ynn[7], N, NE)  #Conductance factor of AMPA channels.
